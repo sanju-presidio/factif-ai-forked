@@ -1,0 +1,133 @@
+<div align="center">
+  <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License" />
+  <img src="https://img.shields.io/github/issues/presidio-oss/factif-ai" alt="Issues" />
+  <img src="https://img.shields.io/github/stars/presidio-oss/factif-ai" alt="Stars" />
+  <img src="https://img.shields.io/github/forks/presidio-oss/factif-ai" alt="Forks" />
+</div>
+<br />
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/images/logo/hai-build-dark-logo.png">
+    <source media="(prefers-color-scheme: light)" srcset="assets/images/logo/hai-build-light-logo.png">
+    <img alt="HAI Logo" src="assets/images/logo/hai-build-white-bg.png" height="auto">
+  </picture>
+</div>
+<br />
+
+<div align="center">
+  <em>Automate testing through AI-powered computer control.<br>
+  From manual steps to automated tests in minutes.</em>
+</div>
+<br>
+
+# 🚀 FactifAI
+
+**FactifAI** revolutionizes test automation by directly controlling your computer through AI. Using built-in vision capabilities of Claude, OpenAI, and Gemini along with computer use, it can navigate any application naturally - clicking, typing, and verifying results just like a human would.
+
+<div align="center">
+<img src="assets/images/factif-ai-home.png" alt="FACTIF-AI in action" width="900"/>
+</div>
+
+## Table of Contents
+- [🌟 Overview](#-overview)
+- [📥 Getting Started](#-getting-started)
+- [✨ Key Features](#-key-features)
+- [🖥️ Automation Modes](#️-automation-modes)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
+- [📧 Contact](#-contact)
+
+## 🌟 Overview
+
+In today's fast-paced software development landscape, efficient testing is crucial for delivering high-quality applications. FactifAI transforms how teams approach testing by combining AI vision with direct computer control, enabling natural interaction with applications.
+
+## ✨ Key Features
+
+### 🔮 Multi-Modal Support
+Built-in support for leading vision-language models:
+- **Claude**: Anthropic's advanced vision and reasoning model
+- **OpenAI**: GPT-4o with visual understanding capabilities
+- **Gemini**: Google's multimodal AI for computer interaction
+- **[OmniParser](https://github.com/microsoft/OmniParser)**: Screen Parsing tool for Pure Vision Based GUI Agent
+
+### 🤖 AI-Powered Computer Control
+- Intelligent element detection and navigation
+- Automated verification and validation
+
+### 🎮 Dual Automation Modes
+- **Puppeteer**: Web application testing
+- **Docker VNC**: Desktop and mobile testing
+
+## 📥 Getting Started
+
+1. **Download and Install**
+   ```bash
+   git clone https://gitlab.presidio.com/hai-build/factif-ai.git
+   cd factif-ai
+   npm run install:all
+   ```
+
+2. **Quick Setup**
+   ```bash
+   # Copy environment files
+   cp frontend/.env.example frontend/.env
+   cp backend/.env.example backend/.env
+   
+   # Start the application
+   npm start
+   ```
+
+3. **Access the Application**
+   - Open http://localhost:5173 in your browser
+   - Follow the setup wizard to configure your preferred AI model
+
+For detailed configuration options, see:
+- [Frontend Setup Guide](frontend/README.md)
+- [Backend Configuration](backend/README.md)
+
+## 🖥️ Automation Modes
+
+FactifAI offers two powerful modes of automation to cover all your testing needs:
+
+### 🌐 Puppeteer Mode (Default)
+Perfect for web application testing, the AI agent uses Puppeteer to control Chrome/Chromium browser:
+- **Web Testing**: Automate any web application
+- **Form Handling**: Smart form detection and interaction
+- **Visual Verification**: AI-powered UI validation
+- **Screenshot Capture**: Automated visual documentation
+
+### 🎯 Docker VNC Mode
+For comprehensive testing of desktop and mobile applications:
+```bash
+# Start the VNC environment
+docker run -d \
+  --name factif-ubuntu-vnc \
+  -p 5900:5900 \
+  -p 6080:6080 \
+  factif-ubuntu-vnc
+```
+Access via:
+- **VNC Client**: localhost:5900
+- **Browser**: http://localhost:6080
+
+Features:
+- **Desktop Apps**: Test any desktop application
+- **Mobile Testing**: Use emulators for mobile apps
+- **Cross-Platform**: Test across different platforms
+- **Full Control**: Complete system automation
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📜 Code of Conduct
+
+Please read our [Code of Conduct](CODE_OF_CONDUCT.md) to keep our community approachable and respectable.
+
+## 📧 Contact
+
+For questions or feedback, please contact us at [hai-feedback@presidio.com](mailto:hai-feedback@presidio.com).
