@@ -62,7 +62,7 @@ Built-in support for leading vision-language models:
 
 1. **Download and Install**
    ```bash
-   git clone https://gitlab.presidio.com/hai-build/factif-ai.git
+   git clone https://github.com/presidio-oss/factif-ai.git
    cd factif-ai
    npm run install:all
    ```
