@@ -4,7 +4,7 @@ interface SuggestionCardProps {
   title: string;
   description: string;
   onClick: () => void;
-  type: 'ecommerce' | 'banking' | 'travel' | 'form' | 'movie';
+  type: 'ecommerce' | 'banking' | 'travel' | 'form' | 'movie' | 'content';
 }
 
 export const SuggestionCard = ({ title, description, onClick, type }: SuggestionCardProps) => (
@@ -18,7 +18,7 @@ export const SuggestionCard = ({ title, description, onClick, type }: Suggestion
         <h4 className="text-foreground font-medium text-sm mb-0.5 group-hover:text-primary transition-colors">
           {title}
         </h4>
-        <p className="text-xs text-foreground-500 truncate">
+        <p className="text-xs text-foreground-500 line-clamp-2">
           {description}
         </p>
       </div>

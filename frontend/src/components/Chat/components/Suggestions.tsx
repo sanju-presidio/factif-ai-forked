@@ -9,7 +9,7 @@ export const Suggestions = ({ onSendMessage }: SuggestionsProps) => {
   const suggestions = [
     {
       type: 'ecommerce' as const,
-      title: 'E-commerce Testing',
+      title: 'Product Checkout',
       description:
         'Test and validate a complete purchase flow on Saucedemo.com',
       prompt:
@@ -38,7 +38,7 @@ export const Suggestions = ({ onSendMessage }: SuggestionsProps) => {
       type: 'banking' as const,
       title: 'Banking Application',
       description:
-        'Test user registration and login flow on ParaBank demo site',
+        'Test user registration and login flow on ParaBank. Validate account creation, form submission, and secure authentication process.',
       prompt:
         'Test user registration and login flow on ParaBank demo site\n' +
         '* Step 1. Navigate to https://parabank.parasoft.com/\n' +
@@ -47,6 +47,24 @@ export const Suggestions = ({ onSendMessage }: SuggestionsProps) => {
         '* Step 4. Fill in the form with random data and submit the form\n' +
         '* Step 5. On successful account creation, login to the account using the same credentials\n' +
         '* Step 6. Check whether the login was successful or not',
+    },
+    {
+      type: 'content' as const,
+      title: 'Content Navigation',
+      description:
+        'Test search and navigation functionality on Wikipedia.org',
+      prompt:
+        'Test search and navigation functionality on Wikipedia.org\n' +
+        '* Step 1. Navigate to https://www.wikipedia.org/\n' +
+        '* Step 2. Click on the search input field\n' +
+        '* Step 3. Type "Artificial Intelligence" in the search box\n' +
+        '* Step 4. Click the search button or press Enter\n' +
+        '* Step 5. Verify the search results page loads\n' +
+        '* Step 6. Click on the main "Artificial Intelligence" article link\n' +
+        '* Step 7. Verify the article page loads\n' +
+        '* Step 8. Scroll down to read through sections\n' +
+        '* Step 9. Click on any internal link to navigate to another article\n' +
+        '* Step 10. Verify the new article page loads successfully',
     }
   ];
 

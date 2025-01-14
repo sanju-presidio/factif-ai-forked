@@ -2,6 +2,7 @@ import { MessagePatterns, MessagePart } from '../../../utils/messagePatterns';
 import ReactMarkdown from 'react-markdown';
 import { markdownComponents } from '../../../utils/markdownConfig';
 import { useState } from 'react';
+import { ImageModal } from '../../Modal/ImageModal';
 
 interface MessageProps {
   text: string;
@@ -71,6 +72,10 @@ const MessagePartRenderer = ({ part }: { part: MessagePart }) => {
     case 'action_result':
       const [showProcessed, setShowProcessed] = useState(true);
       const [showElements, setShowElements] = useState(false);
+      const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+      const imageData = showProcessed && part.omniParserResult 
+        ? part.omniParserResult.image 
+        : part.screenshot;
 
       return (
         <div className="mb-3 pl-1">
@@ -116,11 +121,16 @@ const MessagePartRenderer = ({ part }: { part: MessagePart }) => {
                 {/* Image Display */}
                 <div>
                   <img 
-                    src={`data:image/png;base64,${showProcessed && part.omniParserResult 
-                      ? part.omniParserResult.image 
-                      : part.screenshot}`}
+                    src={`data:image/png;base64,${imageData}`}
                     alt="Action Result" 
-                    className="max-w-full"
+                    className="max-w-full cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setIsImageModalOpen(true)}
+                  />
+                  <ImageModal 
+                    isOpen={isImageModalOpen}
+                    onClose={() => setIsImageModalOpen(false)}
+                    imageUrl={`data:image/png;base64,${imageData}`}
+                    omniParserResult={showProcessed ? part.omniParserResult : undefined}
                   />
                 </div>
 
