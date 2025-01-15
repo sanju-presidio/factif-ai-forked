@@ -30,8 +30,8 @@
 
 ## Table of Contents
 - [🌟 Overview](#-overview)
-- [📥 Getting Started](#-getting-started)
 - [✨ Key Features](#-key-features)
+- [📥 Getting Started](#-getting-started)
 - [🖥️ Automation Modes](#️-automation-modes)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
@@ -39,7 +39,7 @@
 
 ## 🌟 Overview
 
-In today's fast-paced software development landscape, efficient testing is crucial for delivering high-quality applications. FactifAI transforms how teams approach testing by combining AI vision with direct computer control, enabling natural interaction with applications.
+In today's fast-paced software development landscape, efficient testing is crucial for delivering high-quality applications. Factif AI transforms how teams approach testing by combining AI vision with direct computer control, enabling natural interaction with applications.
 
 ## ✨ Key Features
 
@@ -50,13 +50,19 @@ Built-in support for leading vision-language models:
 - **Gemini**: Google's multimodal AI for computer interaction
 - **[OmniParser](https://github.com/microsoft/OmniParser)**: Screen Parsing tool for Pure Vision Based GUI Agent
 
+  <div align="center">
+  <img src="assets/gifs/factif-ai-omni-parser.gif" alt="FACTIF-AI in action" width="900"/>
+  </div>
+
 ### 🤖 AI-Powered Computer Control
 - Intelligent element detection and navigation
 - Automated verification and validation
+- Comprehensive test documentation with automated screenshot capture for each step
+- Integrated test case export with visual step-by-step documentation
 
-### 🎮 Dual Automation Modes
-- **Puppeteer**: Web application testing
-- **Docker VNC**: Desktop and mobile testing
+  <div align="center">
+  <img src="assets/gifs/factif-ai-save.gif" alt="FACTIF-AI in action" width="900"/>
+  </div>
 
 ## 📥 Getting Started
 
@@ -87,7 +93,7 @@ For detailed configuration options, see:
 
 ## 🖥️ Automation Modes
 
-FactifAI offers two powerful modes of automation to cover all your testing needs:
+Factif AI offers two powerful modes of automation to cover all your testing needs:
 
 <div align="center">
 <img src="assets/gifs/factif-ai-preview.gif" alt="FACTIF-AI in action" width="900"/>
