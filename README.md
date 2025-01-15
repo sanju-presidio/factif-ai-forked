@@ -20,12 +20,12 @@
 </div>
 <br>
 
-# 🚀 FactifAI
+# 🚀 Factif AI
 
-**FactifAI** revolutionizes test automation by directly controlling your computer through AI. Using built-in vision capabilities of Claude, OpenAI, and Gemini along with computer use, it can navigate any application naturally - clicking, typing, and verifying results just like a human would.
+**Factif AI** revolutionizes test automation by directly controlling your computer through AI. Using built-in vision capabilities of Claude, OpenAI, and Gemini along with computer use, it can navigate any application naturally - clicking, typing, and verifying results just like a human would.
 
 <div align="center">
-<img src="assets/images/factif-ai-home.png" alt="FACTIF-AI in action" width="900"/>
+<img src="assets/gifs/factif-ai-demo.gif" alt="FACTIF-AI in action" width="900"/>
 </div>
 
 ## Table of Contents
@@ -89,6 +89,10 @@ For detailed configuration options, see:
 
 FactifAI offers two powerful modes of automation to cover all your testing needs:
 
+<div align="center">
+<img src="assets/gifs/factif-ai-preview.gif" alt="FACTIF-AI in action" width="900"/>
+</div>
+
 ### 🌐 Puppeteer Mode (Default)
 Perfect for web application testing, the AI agent uses Puppeteer to control Chrome/Chromium browser:
 - **Web Testing**: Automate any web application
@@ -118,7 +122,9 @@ Features:
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+To contribute to the project, start by exploring [open issues](https://github.com/presidio-oss/factif-ai/issues) or checking our [feature request board](https://github.com/presidio-oss/factif-ai/discussions/categories/feature-requests?discussions_q=is%3Aopen+category%3A%22Feature+Requests%22+sort%3Atop).
+
+Please read our [Contributing Guidelines](./CONTRIBUTING.md) for more details.
 
 ## 📄 License
 
