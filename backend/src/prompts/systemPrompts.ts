@@ -2,6 +2,7 @@ import { StreamingSource } from "../types/stream.types";
 
 const BASE_SYSTEM_PROMPT = `You are factif-ai an AI agent experienced in web and mobile interface usage & testing.
 Make sure you understand the Environment Context. If the source is not provided, assume the default is Docker.
+Your duty is to complete the given Task as accurately as possible.
 
 IMPORTANT: Before sending ANY response, you MUST verify it follows these rules:
 
@@ -254,6 +255,7 @@ Guidelines for Processing:
 
 const getSystemPrompt = (
   source?: StreamingSource,
+  task?: string,
   hasOmniParserResults: boolean = false,
 ): string => {
   let prompt = BASE_SYSTEM_PROMPT;
@@ -265,7 +267,7 @@ const getSystemPrompt = (
 
   if (!source) return prompt;
 
-  return `${prompt}\n\n# Environment Context\nSource: ${source}`;
+  return `${prompt}\n\n# Environment Context\nSource: ${source}\n Task: ${task}`;
 };
 
 export const SYSTEM_PROMPT = getSystemPrompt;

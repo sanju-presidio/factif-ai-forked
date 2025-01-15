@@ -65,3 +65,7 @@ export const trimHistory = (
 
   return result;
 }
+
+export const getTask = (history: ChatMessage[]): string => {
+  return history.length > 0 ? history[0].text : '';
+}

@@ -7,6 +7,7 @@ import { OmniParserResult } from "../../types/action.types";
 import { ChatMessage } from "../../types/chat.types";
 import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
+import { getTask } from "../../utils/historyManager";
 
 export class OpenAIProvider implements LLMProvider {
   private client: OpenAI | AzureOpenAI;
@@ -40,7 +41,8 @@ export class OpenAIProvider implements LLMProvider {
     imageData?: string,
     omniParserResult?: OmniParserResult,
   ): { role: "system" | "user" | "assistant"; content: string | any[] }[] {
-    const systemPrompt = SYSTEM_PROMPT(source, !!omniParserResult);
+    const task = getTask(history);
+    const systemPrompt = SYSTEM_PROMPT(source, task, !!omniParserResult);
 
     const formattedMessages: {
       role: "system" | "user" | "assistant";

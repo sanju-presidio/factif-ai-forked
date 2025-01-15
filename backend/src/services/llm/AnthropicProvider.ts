@@ -10,6 +10,7 @@ import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
 import fs from "fs";
 import path from "path";
+import { getTask } from "../../utils/historyManager";
 
 export class AnthropicProvider implements LLMProvider {
   private logMessageRequest(messageRequest: any) {
@@ -56,13 +57,14 @@ export class AnthropicProvider implements LLMProvider {
     imageData?: string,
     source?: StreamingSource,
   ): { role: "user" | "assistant"; content: string | any[] }[] {
+    const task = getTask(history);
     const formattedMessages: {
       role: "user" | "assistant";
       content: string | any[];
     }[] = [
       {
         role: "user",
-        content: SYSTEM_PROMPT(source),
+        content: SYSTEM_PROMPT(source, task),
       },
       {
         role: "assistant",
