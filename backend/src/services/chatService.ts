@@ -1,15 +1,15 @@
-import { Response } from 'express';
-import { config } from '../config';
-import { StreamResponse } from '../types';
-import { ChatMessage } from '../types/chat.types';
-import { StreamingSource } from '../types/stream.types';
-import { OmniParserResult } from '../types/action.types';
-import { LLMProvider } from './llm/LLMProvider';
-import { AnthropicProvider } from './llm/AnthropicProvider';
-import { OpenAIProvider } from './llm/OpenAIProvider';
-import { GeminiProvider } from './llm/GeminiProvider';
-import { trimHistory } from '../utils/historyManager';
-import { ExploreModeAnthropicProvider } from './llm/ExploreModeAnthropicProvider';
+import { Response } from "express";
+import { config } from "../config";
+import { StreamResponse } from "../types";
+import { ChatMessage } from "../types/chat.types";
+import { StreamingSource } from "../types/stream.types";
+import { OmniParserResult } from "../types/action.types";
+import { LLMProvider } from "./llm/LLMProvider";
+import { AnthropicProvider } from "./llm/AnthropicProvider";
+import { OpenAIProvider } from "./llm/OpenAIProvider";
+import { GeminiProvider } from "./llm/GeminiProvider";
+import { trimHistory } from "../utils/historyManager";
+import { ExploreModeAnthropicProvider } from "./llm/ExploreModeAnthropicProvider";
 
 export class ChatService {
   private static provider: LLMProvider;
@@ -25,7 +25,7 @@ export class ChatService {
       // case 'gemini':
       //   this.provider = new GeminiProvider();
       //   break;
-      case 'anthropic':
+      case "anthropic":
       default:
         this.provider = new ExploreModeAnthropicProvider();
         break;
@@ -40,8 +40,8 @@ export class ChatService {
     res: Response,
     message: string,
     history: ChatMessage[] = [],
-    mode: 'explore' | 'regression' = 'regression',
-    type: 'action' | 'explore' = 'action',
+    mode: "explore" | "regression" = "regression",
+    type: "action" | "explore" = "action",
     imageData?: string,
     source?: StreamingSource,
     omniParserResult?: OmniParserResult,
@@ -49,12 +49,12 @@ export class ChatService {
     // Get the current model based on provider
     const model = (() => {
       switch (config.llm.provider) {
-        case 'openai':
-        case 'azure-openai':
+        case "openai":
+        case "azure-openai":
           return config.llm.openai.model;
-        case 'anthropic':
+        case "anthropic":
           return config.llm.anthropic.model;
-        case 'gemini':
+        case "gemini":
           return config.llm.gemini.model;
       }
     })();
@@ -64,14 +64,14 @@ export class ChatService {
 
     // Initialize SSE connection
     res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
     });
 
     // Set up keep-alive interval
     const keepAliveInterval = setInterval(() => {
-      res.write(': keepalive\n\n');
+      res.write(": keepalive\n\n");
     }, config.streamConfig.keepAliveInterval);
 
     try {
@@ -87,9 +87,9 @@ export class ChatService {
         omniParserResult,
       );
     } catch (error) {
-      console.error('Error streaming response:', error);
+      console.error("Error streaming response:", error);
       this.sendStreamResponse(res, {
-        message: 'Error processing message',
+        message: "Error processing message",
         isComplete: true,
         timestamp: Date.now(),
         isError: true,

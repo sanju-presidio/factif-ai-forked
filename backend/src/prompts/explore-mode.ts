@@ -122,5 +122,6 @@ Do not hallucinate on the elements or buttons. You should have 100% visual confi
 </output>
 `;
 
-export const getPerformActionPrompt = (source: string) =>
-  `${performActionPrompt}\n Environment Context: ${source}`;
+export const getPerformActionPrompt = (task: string, source: string) =>
+  `${performActionPrompt}\n Environment Context: ${source}\n
+  `;

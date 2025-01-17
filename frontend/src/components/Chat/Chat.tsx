@@ -1,10 +1,10 @@
-import { useEffect } from 'react';
-import { ChatInput } from './ChatInput';
-import { ChatMessages } from './ChatMessages';
-import { useAppContext } from '../../contexts/AppContext';
-import { useChat } from '../../hooks/useChat';
-import { Button } from '@nextui-org/react';
-import { Suggestions } from './components/Suggestions';
+import { useEffect } from "react";
+import { ChatInput } from "./ChatInput";
+import { ChatMessages } from "./ChatMessages";
+import { useAppContext } from "../../contexts/AppContext";
+import { useChat } from "../../hooks/useChat";
+import { Button } from "@nextui-org/react";
+import { Suggestions } from "./components/Suggestions";
 
 export const Chat = () => {
   const { currentChatId, setCurrentChatId, isChatStreaming } = useAppContext();
@@ -18,7 +18,7 @@ export const Chat = () => {
   }, [currentChatId, setCurrentChatId]);
 
   const handleSendMessage = (message: string) => {
-    sendMessage(message, true, 'action');
+    sendMessage(message, true);
   };
 
   const handleClearChat = () => {

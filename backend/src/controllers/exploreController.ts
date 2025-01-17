@@ -1,11 +1,15 @@
-import { Request, Response } from 'express';
-import { ChatService } from '../services/chatService';
-import { StreamingSource } from '../types/stream.types';
-import { TestcaseController } from './testcaseController';
-import { getLatestScreenshot, saveScreenshot } from '../utils/screenshotUtils';
+import { Request, Response } from "express";
+import { ChatService } from "../services/chatService";
+import { StreamingSource } from "../types/stream.types";
+import { TestcaseController } from "./testcaseController";
+import { getLatestScreenshot, saveScreenshot } from "../utils/screenshotUtils";
+import { modernizeOutput } from "../prompts/modernize-output.prompt";
 
 export class ExploreController {
-  static async handleExploreMessage(req: Request, res: Response): Promise<void> {
+  static async handleExploreMessage(
+    req: Request,
+    res: Response,
+  ): Promise<void> {
     try {
       // Get data from request body
       const { message, imageData, history, omniParserResult } = req.body;
@@ -15,11 +19,12 @@ export class ExploreController {
       const currentChatId = req.query.currentChatId as string;
       const source = req.query.source as StreamingSource | undefined;
       const saveScreenshots = req.query.saveScreenshots as string;
+      const type = req.query.type as "action" | "explore";
 
       if (!message || !Array.isArray(history)) {
         res.status(400).json({
-          status: 'error',
-          message: 'Message and valid history array are required',
+          status: "error",
+          message: "Message and valid history array are required",
         });
         return;
       }
@@ -30,7 +35,7 @@ export class ExploreController {
 
       await Promise.all([
         folderPath &&
-          saveScreenshots === 'true' &&
+          saveScreenshots === "true" &&
           saveScreenshot(finalImageData, folderPath, currentChatId),
         folderPath &&
           TestcaseController.downloadTestcase(
@@ -42,26 +47,26 @@ export class ExploreController {
           res,
           message,
           history,
-          'explore', // Always use explore mode
-          'explore', // Always use explore type
+          "explore",
+          "explore",
           finalImageData,
           source,
           omniParserResult,
         ),
       ]);
     } catch (error) {
-      console.error('Explore message error:', error);
+      console.error("Explore message error:", error);
       res.status(500).json({
-        status: 'error',
-        message: 'Error processing explore message',
+        status: "error",
+        message: "Error processing explore message",
       });
     }
   }
 
   static healthCheck(_req: Request, res: Response): void {
     res.json({
-      status: 'ok',
-      message: 'Explore mode is running',
+      status: "ok",
+      message: "Explore mode is running",
     });
   }
 }

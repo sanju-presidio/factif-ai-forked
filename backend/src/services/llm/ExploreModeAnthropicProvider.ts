@@ -1,35 +1,35 @@
-import { Response } from 'express';
-import Anthropic from '@anthropic-ai/sdk';
-import AnthropicBedrock from '@anthropic-ai/bedrock-sdk';
-import { config } from '../../config';
-import { StreamResponse } from '../../types';
-import { OmniParserResult } from '../../types/action.types';
-import { ChatMessage } from '../../types/chat.types';
-import { StreamingSource } from '../../types/stream.types';
-import { LLMProvider } from './LLMProvider';
-import fs from 'fs';
-import path from 'path';
+import { Response } from "express";
+import Anthropic from "@anthropic-ai/sdk";
+import AnthropicBedrock from "@anthropic-ai/bedrock-sdk";
+import { config } from "../../config";
+import { StreamResponse } from "../../types";
+import { OmniParserResult } from "../../types/action.types";
+import { ChatMessage } from "../../types/chat.types";
+import { StreamingSource } from "../../types/stream.types";
+import { LLMProvider } from "./LLMProvider";
+import fs from "fs";
+import path from "path";
 import {
   exploreModePrompt,
   getPerformActionPrompt,
-} from '../../prompts/explore-mode';
+} from "../../prompts/explore-mode";
 
 export class ExploreModeAnthropicProvider implements LLMProvider {
   private logMessageRequest(messageRequest: any) {
     try {
       // Create logs directory if it doesn't exist
-      const logsDir = path.join(__dirname, '../../../logs');
+      const logsDir = path.join(__dirname, "../../../logs");
       if (!fs.existsSync(logsDir)) {
         fs.mkdirSync(logsDir, { recursive: true });
       }
 
       // Create a log file with timestamp
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
       const logFile = path.join(logsDir, `message-request-${timestamp}.json`);
 
       fs.writeFileSync(logFile, JSON.stringify(messageRequest, null, 2));
     } catch (error) {
-      console.error('Error logging message request:', error);
+      console.error("Error logging message request:", error);
     }
   }
 
@@ -58,18 +58,24 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     history: ChatMessage[],
     imageData?: string,
     source?: StreamingSource,
-    mode: 'explore' | 'regression' = 'regression',
-    type: 'action' | 'explore' = 'action',
-  ): { role: 'user' | 'assistant'; content: string | any[] }[] {
+    mode: "explore" | "regression" = "regression",
+    type: "action" | "explore" = "action",
+  ): { role: "user" | "assistant"; content: string | any[] }[] {
     const formattedMessages: {
-      role: 'user' | 'assistant';
+      role: "user" | "assistant";
       content: string | any[];
-    }[] = [...this.chooseSystemPrompt(type, source as StreamingSource)];
+    }[] = [
+      ...this.chooseSystemPrompt(
+        type,
+        source as StreamingSource,
+        type === "action" ? "complete the action" : "",
+      ),
+    ];
 
     // Add all history messages
     history.forEach((msg) => {
       formattedMessages.push({
-        role: msg.isUser ? 'user' : ('assistant' as const),
+        role: msg.isUser ? "user" : ("assistant" as const),
         content: msg.text,
       });
     });
@@ -77,14 +83,14 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     // Add current message with image if present
     if (imageData) {
       formattedMessages.push({
-        role: 'user',
+        role: "user",
         content: [
-          { type: 'text', text: currentMessage },
+          { type: "text", text: currentMessage },
           {
-            type: 'image',
+            type: "image",
             source: {
-              type: 'base64',
-              media_type: 'image/jpeg',
+              type: "base64",
+              media_type: "image/jpeg",
               data: imageData,
             },
           },
@@ -92,7 +98,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
       });
     } else {
       formattedMessages.push({
-        role: 'user',
+        role: "user",
         content: currentMessage,
       });
     }
@@ -145,7 +151,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
 
   async processStreamResponse(stream: any, res: Response): Promise<void> {
     for await (const chunk of stream) {
-      if (chunk.type === 'content_block_delta' && chunk.delta?.text) {
+      if (chunk.type === "content_block_delta" && chunk.delta?.text) {
         this.sendStreamResponse(res, {
           message: chunk.delta.text,
           timestamp: Date.now(),
@@ -153,7 +159,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
       }
     }
     this.sendStreamResponse(res, {
-      message: '',
+      message: "",
       timestamp: Date.now(),
       isComplete: true,
     });
@@ -163,8 +169,8 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     res: Response,
     message: string,
     history: ChatMessage[] = [],
-    mode: 'explore' | 'regression' = 'regression',
-    type: 'action' | 'explore' = 'action',
+    mode: "explore" | "regression" = "regression",
+    type: "action" | "explore" = "action",
     source?: StreamingSource,
     imageData?: string,
     omniParserResult?: OmniParserResult,
@@ -186,11 +192,11 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
       if (isRetrySuccessful) {
         return;
       }
-      console.log('Attempting to retry');
+      console.log("Attempting to retry");
     }
     if (!isRetrySuccessful) {
       this.sendStreamResponse(res, {
-        message: 'Error processing message. Please try again later.',
+        message: "Error processing message. Please try again later.",
         timestamp: Date.now(),
         isError: true,
       });
@@ -201,14 +207,14 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     res: Response,
     message: string,
     history: ChatMessage[] = [],
-    mode: 'explore' | 'regression' = 'regression',
-    type: 'action' | 'explore' = 'action',
+    mode: "explore" | "regression" = "regression",
+    type: "action" | "explore" = "action",
     source?: StreamingSource,
     imageData?: string,
     omniParserResult?: OmniParserResult,
   ) {
-    console.log('Processing message with history length:', history.length);
-    const USER_ROLE = 'user';
+    console.log("Processing message with history length:", history.length);
+    const USER_ROLE = "user";
     try {
       const modelId = this.getModelId();
       // Format messages with history and image if present
@@ -241,7 +247,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
       return true;
     } catch (error) {
       this.sendStreamResponse(res, {
-        message: 'Error processing message re-tyring',
+        message: "Error processing message re-tyring",
         timestamp: Date.now(),
         isError: false,
       });
@@ -251,33 +257,34 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
   }
 
   chooseSystemPrompt(
-    action: 'action' | 'explore',
+    action: "action" | "explore",
     source: StreamingSource,
+    task: string,
   ): {
-    role: 'user' | 'assistant';
+    role: "user" | "assistant";
     content: string | any[];
   }[] {
     const assistantMessage: {
-      role: 'user' | 'assistant';
+      role: "user" | "assistant";
       content: string | any[];
     } | null =
-      action === 'explore'
+      action === "explore"
         ? {
-            role: 'assistant',
+            role: "assistant",
             content:
-              'I understand. Before each response, I will:\n\n1. Verify only ONE tool use exists\n2. Check no tool XML in markdown\n3. Validate all parameters\n4. Never combine multiple actions\n\nWhat would you like me to do?',
+              "I understand. Before each response, I will:\n\n1. Verify only ONE tool use exists\n2. Check no tool XML in markdown\n3. Validate all parameters\n4. Never combine multiple actions\n\nWhat would you like me to do?",
           }
         : null;
     const message: {
-      role: 'user' | 'assistant';
+      role: "user" | "assistant";
       content: string | any[];
     }[] = [
       {
-        role: 'user',
+        role: "user",
         content:
-          action === 'explore'
+          action === "explore"
             ? exploreModePrompt
-            : getPerformActionPrompt(source),
+            : getPerformActionPrompt(source, task),
       },
     ];
     assistantMessage && message.push(assistantMessage);

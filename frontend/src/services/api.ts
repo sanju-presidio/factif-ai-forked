@@ -199,36 +199,39 @@ export const sendExploreChatMessage = async (
   });
 
   // Create the EventSource with POST method using a fetch API
-  const response = await fetch(`${API_BASE_URL}/chat?${queryParams}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      message: MessageProcessor.parseActionResult(message),
-      imageData,
-      // Sanitize history before sending to backend
-      history: history.map((msg) => {
-        if (msg.isUser) {
-          return { text: msg.text, isUser: true };
-        }
-
-        // If this is an action result, convert it to plain text feedback
-        if (msg.text.includes("<perform_action_result>")) {
-          const text = MessageProcessor.parseActionResult(msg.text);
-          if (text) {
-            return {
-              text,
-              isUser: true, // Mark as user message for LLM context
-            };
+  const response = await fetch(
+    `${API_BASE_URL}/explore/message?${queryParams}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: MessageProcessor.parseActionResult(message),
+        imageData,
+        // Sanitize history before sending to backend
+        history: history.map((msg) => {
+          if (msg.isUser) {
+            return { text: msg.text, isUser: true };
           }
-        }
 
-        return { text: msg.text, isUser: false };
+          // If this is an action result, convert it to plain text feedback
+          if (msg.text.includes("<perform_action_result>")) {
+            const text = MessageProcessor.parseActionResult(msg.text);
+            if (text) {
+              return {
+                text,
+                isUser: true, // Mark as user message for LLM context
+              };
+            }
+          }
+
+          return { text: msg.text, isUser: false };
+        }),
+        omniParserResult: omniParserResult || undefined,
       }),
-      omniParserResult: omniParserResult || undefined,
-    }),
-  });
+    },
+  );
 
   if (!response.body) {
     throw new Error("No response body received");
