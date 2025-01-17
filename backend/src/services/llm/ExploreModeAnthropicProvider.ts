@@ -264,17 +264,17 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     role: "user" | "assistant";
     content: string | any[];
   }[] {
-    const assistantMessage: {
-      role: "user" | "assistant";
-      content: string | any[];
-    } | null =
-      action === "explore"
-        ? {
-            role: "assistant",
-            content:
-              "I understand. Before each response, I will:\n\n1. Verify only ONE tool use exists\n2. Check no tool XML in markdown\n3. Validate all parameters\n4. Never combine multiple actions\n\nWhat would you like me to do?",
-          }
-        : null;
+    // const assistantMessage: {
+    //   role: "user" | "assistant";
+    //   content: string | any[];
+    // } | null =
+    //   action === "explore"
+    //     ? {
+    //         role: "assistant",
+    //         content:
+    //           "I understand. Before each response, I will:\n\n1. Verify only ONE tool use exists\n2. Check no tool XML in markdown\n3. Validate all parameters\n4. Never combine multiple actions\n\nWhat would you like me to do?",
+    //       }
+    //     : null;
     const message: {
       role: "user" | "assistant";
       content: string | any[];
@@ -287,7 +287,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
             : getPerformActionPrompt(source, task),
       },
     ];
-    assistantMessage && message.push(assistantMessage);
+    // assistantMessage && message.push(assistantMessage);
     return message;
   }
 }

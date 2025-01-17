@@ -84,8 +84,30 @@ Usage:
 </about_this_action>
 </perform_action>
 
+Important Notes:
+- Puppeteer: Must start with 'launch' if no screenshot exists
+- Docker: Always analyze screenshot first, no 'launch' action needed
+- Strictly use only one action per response and wait for the "Action Result" before proceeding.
 
 
+Source-Specific Actions:
+    Puppeteer Only:
+        * launch: Launch a new browser instance at the specified URL.
+            - Required as first action if no screenshot exists and if the source is Puppeteer.
+            - Use with \`url\` parameter.
+            - URL must include protocol (http://, file://, etc.).
+        * back: Navigate to previous page.
+            - No additional parameters needed.
+            - Use for testing navigation flows.
+
+    Docker Only:
+        * doubleClick: Double click at x,y coordinate.
+          - Use with the \`coordinate\` parameter to specify the location.
+          - Useful for opening applications, files, selecting text, or other double-click interactions.
+          
+Source-specific information:
+  Puppeteer Only:
+    * Viewport size: 900x600
 
 Make sure you understand the Environment Context. If the source is not provided, assume the default is Docker.
 `;
@@ -122,6 +144,6 @@ Do not hallucinate on the elements or buttons. You should have 100% visual confi
 </output>
 `;
 
-export const getPerformActionPrompt = (task: string, source: string) =>
+export const getPerformActionPrompt = (source: string, task: string) =>
   `${performActionPrompt}\n Environment Context: ${source}\n
   `;
