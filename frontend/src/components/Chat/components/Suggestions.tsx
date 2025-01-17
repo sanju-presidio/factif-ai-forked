@@ -8,12 +8,18 @@ interface SuggestionsProps {
 export const Suggestions = ({ onSendMessage }: SuggestionsProps) => {
   const suggestions = [
     {
+      type: 'Explore Mode' as const,
+      title: 'Product Search',
+      description: 'Test product search functionality on Saucedemo.com',
+      prompt: `explore saucedemo.com`,
+    },
+    {
       type: 'ecommerce' as const,
       title: 'Product Checkout',
       description:
         'Test and validate a complete purchase flow on Saucedemo.com',
       prompt:
-        "Test and validate a complete purchase flow on Saucedemo.com\n\n" +
+        'Test and validate a complete purchase flow on Saucedemo.com\n\n' +
         '* Step 1. Enter the Saucedemo.com website URL\n' +
         '* Step 2. Load Saucedemo.com website\n' +
         '* Step 3. Click the username input field\n' +
@@ -51,8 +57,7 @@ export const Suggestions = ({ onSendMessage }: SuggestionsProps) => {
     {
       type: 'content' as const,
       title: 'Content Navigation',
-      description:
-        'Test search and navigation functionality on Wikipedia.org',
+      description: 'Test search and navigation functionality on Wikipedia.org',
       prompt:
         'Test search and navigation functionality on Wikipedia.org\n' +
         '* Step 1. Navigate to https://www.wikipedia.org/\n' +
@@ -65,7 +70,7 @@ export const Suggestions = ({ onSendMessage }: SuggestionsProps) => {
         '* Step 8. Scroll down to read through sections\n' +
         '* Step 9. Click on any internal link to navigate to another article\n' +
         '* Step 10. Verify the new article page loads successfully',
-    }
+    },
   ];
 
   return (

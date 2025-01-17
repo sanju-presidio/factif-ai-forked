@@ -1,18 +1,18 @@
-import { OmniParserResult } from "../types/chat.types";
+import { OmniParserResult } from '../types/chat.types';
 
 export interface FollowupQuestion {
-  type: "followup_question";
+  type: 'followup_question';
   question: string;
 }
 
 export interface CompleteTask {
-  type: "complete_task";
+  type: 'complete_task';
   result: string;
   command?: string;
 }
 
 export interface PerformAction {
-  type: "perform_action";
+  type: 'perform_action';
   action: string;
   url?: string;
   coordinate?: string;
@@ -21,8 +21,8 @@ export interface PerformAction {
 }
 
 export interface ActionResult {
-  type: "action_result";
-  status: "success" | "error";
+  type: 'action_result';
+  status: 'success' | 'error';
   message: string;
   screenshot?: string;
   omniParserResult: OmniParserResult;
@@ -33,7 +33,7 @@ export type MessagePart =
   | CompleteTask
   | PerformAction
   | ActionResult
-  | { type: "text"; content: string };
+  | { type: 'text'; content: string };
 
 export interface IProcessedMessagePart {
   length: number;
@@ -50,89 +50,98 @@ export class MessagePatterns {
       /<perform_action>[\s\S]*?<action>(.*?)<\/action>(?:[\s\S]*?<url>(.*?)<\/url>)?(?:[\s\S]*?<coordinate>(.*?)<\/coordinate>)?(?:[\s\S]*?<text>(.*?)<\/text>)?(?:[\s\S]*?<key>(.*?)<\/key>)?[\s\S]*?<\/perform_action>/s,
     actionResult:
       /<perform_action_result>[\s\S]*?<action_status>(success|error)<\/action_status>[\s\S]*?<action_message>(.*?)<\/action_message>(?:[\s\S]*?<screenshot>(.*?)<\/screenshot>)?(?:[\s\S]*?<omni_parser>(.*?)<\/omni_parser>)?[\s\S]*?<\/perform_action_result>/s,
+    exploreOutput:
+      /<output>[\s\n]* <clickable_element>[\s\n](?:<text>[\s\S]*?<\/text>)?(?:[\s\n]*<coordinates>[\s\S]*?<\/coordinates>)?(?:[\s\n]*<about_this_element>[\s\S]*?<\/about_this_element>)?[\s\n]*<\/clickable_element>[\s\n]*<\/output>/s,
   };
 
   static parseMessage(text: string): MessagePart[] {
     const parts: MessagePart[] = [];
-    
+
     // Define all possible tag pairs with their closing tags
     const tagPairs = [
       {
         open: '<ask_followup_question>',
         close: '</ask_followup_question>',
-        processor: this.processFollowupQuestion.bind(this)
+        processor: this.processFollowupQuestion.bind(this),
       },
       {
         open: '<complete_task>',
         close: '</complete_task>',
-        processor: this.processCompleteTaskMatch.bind(this)
+        processor: this.processCompleteTaskMatch.bind(this),
       },
       {
         open: '<perform_action>',
         close: '</perform_action>',
-        processor: this.performActionMatch.bind(this)
+        processor: this.performActionMatch.bind(this),
       },
       {
         open: '<perform_action_result>',
         close: '</perform_action_result>',
-        processor: this.performActionResultMatch.bind(this)
-      }
+        processor: this.performActionResultMatch.bind(this),
+      },
     ];
 
     let remainingText = text;
-    
+
     while (remainingText.length > 0) {
       // Find the first occurrence of any opening tag
-      const tagStarts = tagPairs.map(pair => ({
-        pair,
-        index: remainingText.indexOf(pair.open)
-      })).filter(t => t.index !== -1);
+      const tagStarts = tagPairs
+        .map((pair) => ({
+          pair,
+          index: remainingText.indexOf(pair.open),
+        }))
+        .filter((t) => t.index !== -1);
 
       if (tagStarts.length === 0) {
         // No more tags found, add remaining text if any
         if (remainingText.trim()) {
           parts.push({
-            type: "text",
-            content: remainingText.trim()
+            type: 'text',
+            content: remainingText.trim(),
           });
         }
         break;
       }
 
       // Get the earliest tag
-      const earliestTag = tagStarts.reduce((min, curr) => 
-        curr.index < min.index ? curr : min
+      const earliestTag = tagStarts.reduce((min, curr) =>
+        curr.index < min.index ? curr : min,
       );
 
       // Add any text before the tag
       const preText = remainingText.slice(0, earliestTag.index).trim();
       if (preText) {
         parts.push({
-          type: "text",
-          content: preText
+          type: 'text',
+          content: preText,
         });
       }
 
       // Find the matching closing tag
       const closeIndex = remainingText.indexOf(
         earliestTag.pair.close,
-        earliestTag.index + earliestTag.pair.open.length
+        earliestTag.index + earliestTag.pair.open.length,
       );
 
       if (closeIndex === -1) {
         // No closing tag found, treat the opening tag as text
         parts.push({
-          type: "text",
-          content: remainingText.slice(earliestTag.index, earliestTag.index + earliestTag.pair.open.length)
+          type: 'text',
+          content: remainingText.slice(
+            earliestTag.index,
+            earliestTag.index + earliestTag.pair.open.length,
+          ),
         });
-        remainingText = remainingText.slice(earliestTag.index + earliestTag.pair.open.length);
+        remainingText = remainingText.slice(
+          earliestTag.index + earliestTag.pair.open.length,
+        );
         continue;
       }
 
       // Extract the full tag content
       const fullTag = remainingText.slice(
         earliestTag.index,
-        closeIndex + earliestTag.pair.close.length
+        closeIndex + earliestTag.pair.close.length,
       );
 
       // Process the tag
@@ -142,7 +151,9 @@ export class MessagePatterns {
       }
 
       // Move past this tag
-      remainingText = remainingText.slice(closeIndex + earliestTag.pair.close.length);
+      remainingText = remainingText.slice(
+        closeIndex + earliestTag.pair.close.length,
+      );
     }
 
     return parts;
@@ -157,7 +168,7 @@ export class MessagePatterns {
       match = {
         length: fullMatch.length,
         part: {
-          type: "perform_action",
+          type: 'perform_action',
           action: actionMatch[1],
           ...(actionMatch[2] && { url: actionMatch[2] }),
           ...(actionMatch[3] && { coordinate: actionMatch[3] }),
@@ -178,11 +189,13 @@ export class MessagePatterns {
       match = {
         length: fullMatch.length,
         part: {
-          type: "action_result",
-          status: resultMatch[1] as "success" | "error",
+          type: 'action_result',
+          status: resultMatch[1] as 'success' | 'error',
           message: resultMatch[2],
           ...(resultMatch[3] && { screenshot: resultMatch[3] }),
-          ...(resultMatch[4] && { omniParserResult: JSON.parse(resultMatch[4]) }),
+          ...(resultMatch[4] && {
+            omniParserResult: JSON.parse(resultMatch[4]),
+          }),
         } as ActionResult,
       };
     }
@@ -199,7 +212,7 @@ export class MessagePatterns {
       match = {
         length: fullMatch.length,
         part: {
-          type: "complete_task",
+          type: 'complete_task',
           result,
           ...(command && { command }),
         } as CompleteTask,
@@ -216,7 +229,7 @@ export class MessagePatterns {
     if (question) {
       match = {
         length: fullMatch.length,
-        part: { type: "followup_question", question } as FollowupQuestion,
+        part: { type: 'followup_question', question } as FollowupQuestion,
       };
     }
     return match;
@@ -227,12 +240,33 @@ export class MessagePatterns {
     if (!match) return null;
 
     return {
-      type: "perform_action",
+      type: 'perform_action',
       action: match[1],
       ...(match[2] && { url: match[2] }),
       ...(match[3] && { coordinate: match[3] }),
       ...(match[4] && { text: match[4] }),
       ...(match[5] && { key: match[5] }),
+    };
+  }
+
+  static processExploreOutput(inputString: string) {
+    // Regex patterns to extract the required data
+    const textPattern = /<text>(.*?)<\/text>/;
+    const coordinatesPattern = /<coordinates>(.*?)<\/coordinates>/;
+    const aboutPattern = /<about_this_element>(.*?)<\/about_this_element>/;
+
+    // Extract the data using regex
+    const textMatch = inputString.match(textPattern);
+    const coordinatesMatch = inputString.match(coordinatesPattern);
+    const aboutMatch = inputString.match(aboutPattern);
+
+    // Format the extracted data into the desired object
+    return {
+      text: textMatch ? textMatch[1].trim() : null,
+      coordinates: coordinatesMatch
+        ? coordinatesMatch[1].replace(/\s+/g, '').trim()
+        : null,
+      about_this_element: aboutMatch ? aboutMatch[1].trim() : null,
     };
   }
 }

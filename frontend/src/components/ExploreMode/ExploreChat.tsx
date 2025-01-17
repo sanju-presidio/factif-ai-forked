@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
-import { ChatInput } from './ChatInput';
-import { ChatMessages } from './ChatMessages';
+import { ChatInput } from '../Chat/ChatInput';
+import { ChatMessages } from '../Chat/ChatMessages';
 import { useAppContext } from '../../contexts/AppContext';
 import { useChat } from '../../hooks/useChat';
 import { Button } from '@nextui-org/react';
-import { Suggestions } from './components/Suggestions';
+import { Suggestions } from '../Chat/components/Suggestions';
 
-export const Chat = () => {
+export const ExploreChat = () => {
   const { currentChatId, setCurrentChatId, isChatStreaming } = useAppContext();
   const { messages, sendMessage, clearChat, messagesEndRef, stopStreaming } =
     useChat();
@@ -18,7 +18,7 @@ export const Chat = () => {
   }, [currentChatId, setCurrentChatId]);
 
   const handleSendMessage = (message: string) => {
-    sendMessage(message, true, 'action');
+    sendMessage(message, true, 'explore');
   };
 
   const handleClearChat = () => {
@@ -33,7 +33,7 @@ export const Chat = () => {
       <div className="h-[72px] px-6 border-b border-content3 bg-background flex items-center">
         <div className="flex justify-between items-center w-full">
           <div className="flex flex-col items-start">
-            <h2 className="text-foreground text-lg font-normal mb-0.5">Chat</h2>
+            <h2 className="text-foreground text-lg font-normal mb-0.5">Explore Chat</h2>
             {currentChatId && (
               <span className="text-xs text-foreground/60">
                 {currentChatId}

@@ -1,4 +1,8 @@
-import { ActionResult, ChatMessage, OmniParserResult } from '../types/chat.types';
+import {
+  ActionResult,
+  ChatMessage,
+  OmniParserResult,
+} from '../types/chat.types';
 import { Action, StreamingSource } from '../types/api.types';
 import { MessageProcessor } from './messageProcessor';
 
@@ -13,6 +17,8 @@ export const sendChatMessage = async (
   message: string,
   imageData: string | undefined,
   history: ChatMessage[],
+  mode: string = 'regression',
+  type: string = 'action', //
   folderPath: string,
   currentChatId: string,
   source: 'chrome-puppeteer' | 'ubuntu-docker-vnc',
@@ -21,7 +27,7 @@ export const sendChatMessage = async (
   onError: (error: Error) => void,
   omniParserResult?: OmniParserResult | null,
   saveScreenshots: boolean = false,
-): Promise<() => void> => {  
+): Promise<() => void> => {
   let hasReceivedMessage = false;
 
   // Create a URLSearchParams object for the query parameters
@@ -29,6 +35,8 @@ export const sendChatMessage = async (
     folderPath,
     currentChatId,
     source,
+    mode,
+    type,
     saveScreenshots: saveScreenshots.toString(),
   });
 
@@ -42,22 +50,22 @@ export const sendChatMessage = async (
       message: MessageProcessor.parseActionResult(message),
       imageData,
       // Sanitize history before sending to backend
-      history: history.map(msg => {
+      history: history.map((msg) => {
         if (msg.isUser) {
           return { text: msg.text, isUser: true };
         }
-        
+
         // If this is an action result, convert it to plain text feedback
         if (msg.text.includes('<perform_action_result>')) {
           const text = MessageProcessor.parseActionResult(msg.text);
           if (text) {
             return {
               text,
-              isUser: true // Mark as user message for LLM context
+              isUser: true, // Mark as user message for LLM context
             };
           }
         }
-        
+
         return { text: msg.text, isUser: false };
       }),
       omniParserResult: omniParserResult || undefined,
@@ -88,7 +96,7 @@ export const sendChatMessage = async (
       try {
         while (true) {
           const { done, value } = await reader.read();
-          
+
           if (done) {
             onComplete();
             break;
@@ -98,8 +106,8 @@ export const sendChatMessage = async (
           clearTimeout(connectionTimeout);
 
           const chunk = decoder.decode(value);
-          const lines = chunk.split('\n').filter(line => line.trim());
-          
+          const lines = chunk.split('\n').filter((line) => line.trim());
+
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               const data = JSON.parse(line.slice(6));
@@ -139,22 +147,32 @@ export const sendChatMessage = async (
 };
 
 export const getFileStructure = async (path: string) => {
-  const response = await fetch(`${API_BASE_URL}/filesystem/structure?path=${encodeURIComponent(path)}`);
+  const response = await fetch(
+    `${API_BASE_URL}/filesystem/structure?path=${encodeURIComponent(path)}`,
+  );
   return response.json();
 };
 
-export const executeAction = async (action: Action, source: StreamingSource): Promise<ActionResult> => {
-  const response = await fetch(`${API_BASE_URL}/actions/execute?source=${source}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
+export const executeAction = async (
+  action: Action,
+  source: StreamingSource,
+): Promise<ActionResult> => {
+  const response = await fetch(
+    `${API_BASE_URL}/actions/execute?source=${source}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(action),
     },
-    body: JSON.stringify(action),
-  });
+  );
 
   const result = await response.json();
   if (!response.ok) {
-    throw new Error(result.error || `Action execution failed: ${response.statusText}`);
+    throw new Error(
+      result.error || `Action execution failed: ${response.statusText}`,
+    );
   }
   return result;
 };

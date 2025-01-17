@@ -20,6 +20,7 @@ export class PuppeteerActions {
     const buffer = await PuppeteerActions.page.screenshot({
       type: 'jpeg',
       quality: 80,
+      fullPage: true,
     });
 
     return Buffer.from(buffer).toString('base64');
@@ -289,7 +290,7 @@ export class PuppeteerActions {
   }
 
   // page.goto { waitUntil: "networkidle0" } may not ever resolve, and not waiting could return page content too early before js has loaded
-	// https://stackoverflow.com/questions/52497252/puppeteer-wait-until-page-is-completely-loaded/61304202#61304202
+  // https://stackoverflow.com/questions/52497252/puppeteer-wait-until-page-is-completely-loaded/61304202#61304202
   private static async waitTillHTMLStable(
     page: puppeteer.Page,
     timeout = 5_000,

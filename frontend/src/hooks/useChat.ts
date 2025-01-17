@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { sendChatMessage } from "../services/api";
-import { ChatMessage, OmniParserResult } from "../types/chat.types";
-import { useAppContext } from "../contexts/AppContext";
-import { MessageProcessor } from "../services/messageProcessor";
+import { useEffect, useRef, useState } from 'react';
+import { sendChatMessage } from '../services/api';
+import { ChatMessage, OmniParserResult } from '../types/chat.types';
+import { useAppContext } from '../contexts/AppContext';
+import { MessageProcessor } from '../services/messageProcessor';
 
 export const useChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -15,7 +15,17 @@ export const useChat = () => {
     currentChatId,
     streamingSource,
     saveScreenshots,
+    mode,
   } = useAppContext();
+
+  const [exploreQueue, setExploreQueue] = useState<
+    {
+      text: string;
+      coordinates: string;
+      about_this_element: string;
+      source: string;
+    }[]
+  >([]);
 
   // Initialize MessageProcessor with setHasActiveAction
   useEffect(() => {
@@ -34,7 +44,7 @@ export const useChat = () => {
   }, [messages]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
@@ -54,10 +64,10 @@ export const useChat = () => {
     setMessages((prev) => {
       // Check if message already exists to prevent duplicates
       const messageExists = prev.some(
-        (msg) => 
-          msg.text === newMessage.text && 
+        (msg) =>
+          msg.text === newMessage.text &&
           msg.isUser === newMessage.isUser &&
-          msg.timestamp.getTime() === newMessage.timestamp.getTime()
+          msg.timestamp.getTime() === newMessage.timestamp.getTime(),
       );
       if (messageExists) return prev;
       const newMessages = [...prev, newMessage];
@@ -66,35 +76,43 @@ export const useChat = () => {
     });
   };
 
-  const updateLastMessage = (updater: (message: ChatMessage) => ChatMessage) => {
+  const updateLastMessage = (
+    updater: (message: ChatMessage) => ChatMessage,
+  ) => {
     setMessages((prev) => {
       if (prev.length === 0) return prev;
       const newMessages = [...prev];
       const lastMessage = newMessages[newMessages.length - 1];
       const updatedMessage = updater(lastMessage);
-      
+
       // Only update if there's an actual change
       if (JSON.stringify(lastMessage) === JSON.stringify(updatedMessage)) {
         return prev;
       }
-      
+
       newMessages[newMessages.length - 1] = updatedMessage;
       messagesRef.current = newMessages;
       return newMessages;
     });
   };
 
-  const [latestOmniParserResult, setLatestOmniParserResult] = useState<OmniParserResult | null>(null);
+  const [latestOmniParserResult, setLatestOmniParserResult] =
+    useState<OmniParserResult | null>(null);
 
-  const handleChatMessage = async (currentMessage: string, imageData?: string, omniParserResult?: OmniParserResult) => {
+  const handleChatMessage = async (
+    currentMessage: string,
+    type: string = 'action',
+    imageData?: string,
+    omniParserResult?: OmniParserResult,
+  ) => {
     // Prevent multiple simultaneous chat messages
     if (isProcessing.current) return;
     isProcessing.current = true;
 
-    const messageHistory = messagesRef.current.filter(msg => !msg.isPartial);
-    
-    let fullResponse = "";
-    
+    const messageHistory = messagesRef.current.filter((msg) => !msg.isPartial);
+
+    let fullResponse = '';
+
     // Generate unique ID for this message
     const messageId = `msg_${Date.now()}`;
     activeMessageId.current = messageId;
@@ -105,17 +123,22 @@ export const useChat = () => {
         currentMessage,
         imageData,
         messageHistory,
+        mode,
+        type,
         folderPath,
         currentChatId,
         streamingSource,
-         // onChunk
+        // onChunk
         (chunk: string) => {
           // Ignore chunks if this isn't the active message
           if (!chunk.trim() || activeMessageId.current !== messageId) return;
 
           fullResponse += chunk;
 
-          if (!hasPartialMessage.current && activeMessageId.current === messageId) {
+          if (
+            !hasPartialMessage.current &&
+            activeMessageId.current === messageId
+          ) {
             // For the first chunk, create a new message
             hasPartialMessage.current = true;
             addMessage({
@@ -123,29 +146,45 @@ export const useChat = () => {
               timestamp: new Date(),
               isUser: false,
               isPartial: true,
-              isHistory: false
+              isHistory: false,
             });
           } else {
             // For subsequent chunks, update the last message
-            updateLastMessage(msg => ({
+            updateLastMessage((msg) => ({
               ...msg,
-              text: fullResponse
+              text: fullResponse,
             }));
           }
         },
-         // onComplete
+        // onComplete
         async () => {
           // Only process completion if this is still the active message
           if (activeMessageId.current === messageId) {
             hasPartialMessage.current = false;
-            updateLastMessage(msg => ({
+            updateLastMessage((msg) => ({
               ...msg,
-              isPartial: false
+              isPartial: false,
             }));
 
             // Process for any actions
-            const processedResponse = await MessageProcessor.processMessage(fullResponse, streamingSource);
-            
+            const processedResponse = await MessageProcessor.processMessage(
+              fullResponse,
+              streamingSource,
+            );
+            let exploredOutput: any = {
+              text: '',
+              about_this_element: '',
+              coordinates: '',
+              source: '',
+            };
+            if (mode === 'explore' && type === 'explore') {
+              exploredOutput = {
+                ...MessageProcessor.processExploreMessage(fullResponse),
+                source: fullResponse,
+              };
+              setExploreQueue([...exploreQueue, exploredOutput]);
+            }
+
             if (processedResponse.actionResult) {
               // Update omni parser result if present
               if (processedResponse.omniParserResult) {
@@ -153,10 +192,10 @@ export const useChat = () => {
               }
 
               // First mark the current response as complete and non-partial
-              updateLastMessage(msg => ({
+              updateLastMessage((msg) => ({
                 ...msg,
                 isPartial: false,
-                isHistory: true // Mark as history since we'll be sending it in the next request
+                isHistory: true, // Mark as history since we'll be sending it in the next request
               }));
 
               // Add action result as a system message
@@ -164,22 +203,42 @@ export const useChat = () => {
                 text: processedResponse.actionResult,
                 timestamp: new Date(),
                 isUser: false,
-                isHistory: false
+                isHistory: false,
               });
 
               // Reset processing flag before recursive call
               isProcessing.current = false;
+
+              console.log('Action result:', processedResponse.actionResult);
               await handleChatMessage(
-                processedResponse.actionResult, 
+                processedResponse.actionResult as any,
+                mode === 'explore' &&
+                  type === 'action' &&
+                  processedResponse.actionResult.match(
+                    /<complete_task>[\s\n]?<\/complete_task>/g,
+                  )
+                  ? 'explore'
+                  : 'action',
                 imageData,
-                processedResponse.omniParserResult // Pass the omniParserResult to the next call
+                processedResponse.omniParserResult, // Pass the omniParserResult to the next call,
               );
+            } else if (exploredOutput && mode === 'explore') {
+              const nextElementToVisit = exploreQueue.shift() || exploredOutput;
+              if (nextElementToVisit) {
+                isProcessing.current = false;
+                await handleChatMessage(
+                  `Task: Visit ${nextElementToVisit.text} on coordinate : ${nextElementToVisit.coordinates} with about this element : ${nextElementToVisit.about_this_element}`,
+                  'action',
+                  imageData,
+                  processedResponse.omniParserResult, // Pass the omniParserResult to the next call,
+                );
+              }
             } else {
               // Mark message as history even when there's no action
-              updateLastMessage(msg => ({
+              updateLastMessage((msg) => ({
                 ...msg,
                 isPartial: false,
-                isHistory: true
+                isHistory: true,
               }));
               setIsChatStreaming(false);
               activeMessageId.current = null;
@@ -189,26 +248,26 @@ export const useChat = () => {
         },
         // onError
         (error: Error) => {
-          console.error("Chat Error:", error);
+          console.error('Chat Error:', error);
           if (activeMessageId.current === messageId) {
             setIsChatStreaming(false);
             hasPartialMessage.current = false;
             activeMessageId.current = null;
             isProcessing.current = false;
-            
+
             // If we have a partial message, mark it as complete
-            if (messagesRef.current.some(m => m.isPartial)) {
-              updateLastMessage(msg => ({
+            if (messagesRef.current.some((m) => m.isPartial)) {
+              updateLastMessage((msg) => ({
                 ...msg,
-                isPartial: false
+                isPartial: false,
               }));
             }
-            
+
             addMessage({
-              text: "Sorry, there was an error processing your message.",
+              text: 'Sorry, there was an error processing your message.',
               timestamp: new Date(),
               isUser: false,
-              isHistory: false
+              isHistory: false,
             });
           }
         },
@@ -216,26 +275,26 @@ export const useChat = () => {
         saveScreenshots,
       );
     } catch (error) {
-      console.error("Chat Error:", error);
+      console.error('Chat Error:', error);
       if (activeMessageId.current === messageId) {
         setIsChatStreaming(false);
         hasPartialMessage.current = false;
         activeMessageId.current = null;
         isProcessing.current = false;
-        
+
         // If we have a partial message, mark it as complete
-        if (messagesRef.current.some(m => m.isPartial)) {
-          updateLastMessage(msg => ({
+        if (messagesRef.current.some((m) => m.isPartial)) {
+          updateLastMessage((msg) => ({
             ...msg,
-            isPartial: false
+            isPartial: false,
           }));
         }
-        
+
         addMessage({
-          text: "Sorry, there was an error processing your message.",
+          text: 'Sorry, there was an error processing your message.',
           timestamp: new Date(),
           isUser: false,
-          isHistory: false
+          isHistory: false,
         });
       }
     }
@@ -244,7 +303,8 @@ export const useChat = () => {
   const sendMessage = async (
     message: string,
     sendToBackend: boolean = true,
-    imageData?: string
+    type: string = 'action',
+    imageData?: string,
   ) => {
     if (!message.trim() || isChatStreaming) return;
 
@@ -253,12 +313,12 @@ export const useChat = () => {
       text: message,
       timestamp: new Date(),
       isUser: true,
-      isHistory: true // Mark user messages as history since they should be included in future requests
+      isHistory: true, // Mark user messages as history since they should be included in future requests
     });
 
     // Send to backend if needed
     if (sendToBackend) {
-      await handleChatMessage(message, imageData);
+      await handleChatMessage(message, type, imageData);
       // Reset omni parser result after sending
       setLatestOmniParserResult(null);
     }
@@ -280,13 +340,13 @@ export const useChat = () => {
       hasPartialMessage.current = false;
       isProcessing.current = false;
       setIsChatStreaming(false);
-      
+
       // Mark any partial message as complete
-      if (messagesRef.current.some(m => m.isPartial)) {
-        updateLastMessage(msg => ({
+      if (messagesRef.current.some((m) => m.isPartial)) {
+        updateLastMessage((msg) => ({
           ...msg,
           isPartial: false,
-          isHistory: true
+          isHistory: true,
         }));
       }
     }

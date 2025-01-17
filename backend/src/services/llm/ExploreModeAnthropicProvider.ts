@@ -3,15 +3,18 @@ import Anthropic from '@anthropic-ai/sdk';
 import AnthropicBedrock from '@anthropic-ai/bedrock-sdk';
 import { config } from '../../config';
 import { StreamResponse } from '../../types';
-import { SYSTEM_PROMPT } from '../../prompts/systemPrompts';
 import { OmniParserResult } from '../../types/action.types';
 import { ChatMessage } from '../../types/chat.types';
 import { StreamingSource } from '../../types/stream.types';
 import { LLMProvider } from './LLMProvider';
 import fs from 'fs';
 import path from 'path';
+import {
+  exploreModePrompt,
+  getPerformActionPrompt,
+} from '../../prompts/explore-mode';
 
-export class AnthropicProvider implements LLMProvider {
+export class ExploreModeAnthropicProvider implements LLMProvider {
   private logMessageRequest(messageRequest: any) {
     try {
       // Create logs directory if it doesn't exist
@@ -55,21 +58,13 @@ export class AnthropicProvider implements LLMProvider {
     history: ChatMessage[],
     imageData?: string,
     source?: StreamingSource,
+    mode: 'explore' | 'regression' = 'regression',
+    type: 'action' | 'explore' = 'action',
   ): { role: 'user' | 'assistant'; content: string | any[] }[] {
     const formattedMessages: {
       role: 'user' | 'assistant';
       content: string | any[];
-    }[] = [
-      {
-        role: 'user',
-        content: SYSTEM_PROMPT(source),
-      },
-      {
-        role: 'assistant',
-        content:
-          'I understand. Before each response, I will:\n\n1. Verify only ONE tool use exists\n2. Check no tool XML in markdown\n3. Validate all parameters\n4. Never combine multiple actions\n\nWhat would you like me to do?',
-      },
-    ];
+    }[] = [...this.chooseSystemPrompt(type, source as StreamingSource)];
 
     // Add all history messages
     history.forEach((msg) => {
@@ -168,6 +163,8 @@ export class AnthropicProvider implements LLMProvider {
     res: Response,
     message: string,
     history: ChatMessage[] = [],
+    mode: 'explore' | 'regression' = 'regression',
+    type: 'action' | 'explore' = 'action',
     source?: StreamingSource,
     imageData?: string,
     omniParserResult?: OmniParserResult,
@@ -180,6 +177,8 @@ export class AnthropicProvider implements LLMProvider {
         res,
         message,
         history,
+        mode,
+        type,
         source,
         imageData,
         omniParserResult,
@@ -202,6 +201,8 @@ export class AnthropicProvider implements LLMProvider {
     res: Response,
     message: string,
     history: ChatMessage[] = [],
+    mode: 'explore' | 'regression' = 'regression',
+    type: 'action' | 'explore' = 'action',
     source?: StreamingSource,
     imageData?: string,
     omniParserResult?: OmniParserResult,
@@ -216,6 +217,8 @@ export class AnthropicProvider implements LLMProvider {
         history,
         imageData,
         source,
+        mode,
+        type,
       );
       // If omni parser is enabled and we have results, add them to the last user message
       if (config.omniParser.enabled && omniParserResult) {
@@ -245,5 +248,39 @@ export class AnthropicProvider implements LLMProvider {
 
       return false;
     }
+  }
+
+  chooseSystemPrompt(
+    action: 'action' | 'explore',
+    source: StreamingSource,
+  ): {
+    role: 'user' | 'assistant';
+    content: string | any[];
+  }[] {
+    const assistantMessage: {
+      role: 'user' | 'assistant';
+      content: string | any[];
+    } | null =
+      action === 'explore'
+        ? {
+            role: 'assistant',
+            content:
+              'I understand. Before each response, I will:\n\n1. Verify only ONE tool use exists\n2. Check no tool XML in markdown\n3. Validate all parameters\n4. Never combine multiple actions\n\nWhat would you like me to do?',
+          }
+        : null;
+    const message: {
+      role: 'user' | 'assistant';
+      content: string | any[];
+    }[] = [
+      {
+        role: 'user',
+        content:
+          action === 'explore'
+            ? exploreModePrompt
+            : getPerformActionPrompt(source),
+      },
+    ];
+    assistantMessage && message.push(assistantMessage);
+    return message;
   }
 }
