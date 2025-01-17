@@ -1,15 +1,15 @@
-import { useEffect } from 'react';
-import { ChatInput } from '../Chat/ChatInput';
-import { ChatMessages } from '../Chat/ChatMessages';
-import { useAppContext } from '../../contexts/AppContext';
-import { useChat } from '../../hooks/useChat';
-import { Button } from '@nextui-org/react';
-import { Suggestions } from '../Chat/components/Suggestions';
+import { useEffect } from "react";
+import { ChatInput } from "../Chat/ChatInput";
+import { ChatMessages } from "../Chat/ChatMessages";
+import { useAppContext } from "@/contexts/AppContext";
+import { useExploreChat } from "@/hooks/useExploreChat";
+import { Button } from "@nextui-org/react";
+import { Suggestions } from "../Chat/components/Suggestions";
 
 export const ExploreChat = () => {
   const { currentChatId, setCurrentChatId, isChatStreaming } = useAppContext();
   const { messages, sendMessage, clearChat, messagesEndRef, stopStreaming } =
-    useChat();
+    useExploreChat();
 
   useEffect(() => {
     if (!currentChatId) {
@@ -18,7 +18,7 @@ export const ExploreChat = () => {
   }, [currentChatId, setCurrentChatId]);
 
   const handleSendMessage = (message: string) => {
-    sendMessage(message, true, 'explore');
+    sendMessage(message, true);
   };
 
   const handleClearChat = () => {
@@ -33,7 +33,9 @@ export const ExploreChat = () => {
       <div className="h-[72px] px-6 border-b border-content3 bg-background flex items-center">
         <div className="flex justify-between items-center w-full">
           <div className="flex flex-col items-start">
-            <h2 className="text-foreground text-lg font-normal mb-0.5">Explore Chat</h2>
+            <h2 className="text-foreground text-lg font-normal mb-0.5">
+              Explore Chat
+            </h2>
             {currentChatId && (
               <span className="text-xs text-foreground/60">
                 {currentChatId}

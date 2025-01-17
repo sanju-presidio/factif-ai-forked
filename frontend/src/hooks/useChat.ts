@@ -1,31 +1,20 @@
-import { useEffect, useRef, useState } from 'react';
-import { sendChatMessage } from '../services/api';
-import { ChatMessage, OmniParserResult } from '../types/chat.types';
-import { useAppContext } from '../contexts/AppContext';
-import { MessageProcessor } from '../services/messageProcessor';
+import { useEffect, useRef, useState } from "react";
+import { sendChatMessage } from "../services/api";
+import { ChatMessage, OmniParserResult } from "../types/chat.types";
+import { useAppContext } from "../contexts/AppContext";
+import { MessageProcessor } from "../services/messageProcessor";
 
 export const useChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const {
     isChatStreaming,
     setIsChatStreaming,
-    hasActiveAction,
     setHasActiveAction,
     folderPath,
     currentChatId,
     streamingSource,
     saveScreenshots,
-    mode,
   } = useAppContext();
-
-  const [exploreQueue, setExploreQueue] = useState<
-    {
-      text: string;
-      coordinates: string;
-      about_this_element: string;
-      source: string;
-    }[]
-  >([]);
 
   // Initialize MessageProcessor with setHasActiveAction
   useEffect(() => {
@@ -44,7 +33,7 @@ export const useChat = () => {
   }, [messages]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -101,7 +90,6 @@ export const useChat = () => {
 
   const handleChatMessage = async (
     currentMessage: string,
-    type: string = 'action',
     imageData?: string,
     omniParserResult?: OmniParserResult,
   ) => {
@@ -111,7 +99,7 @@ export const useChat = () => {
 
     const messageHistory = messagesRef.current.filter((msg) => !msg.isPartial);
 
-    let fullResponse = '';
+    let fullResponse = "";
 
     // Generate unique ID for this message
     const messageId = `msg_${Date.now()}`;
@@ -123,8 +111,6 @@ export const useChat = () => {
         currentMessage,
         imageData,
         messageHistory,
-        mode,
-        type,
         folderPath,
         currentChatId,
         streamingSource,
@@ -171,19 +157,6 @@ export const useChat = () => {
               fullResponse,
               streamingSource,
             );
-            let exploredOutput: any = {
-              text: '',
-              about_this_element: '',
-              coordinates: '',
-              source: '',
-            };
-            if (mode === 'explore' && type === 'explore') {
-              exploredOutput = {
-                ...MessageProcessor.processExploreMessage(fullResponse),
-                source: fullResponse,
-              };
-              setExploreQueue([...exploreQueue, exploredOutput]);
-            }
 
             if (processedResponse.actionResult) {
               // Update omni parser result if present
@@ -209,30 +182,12 @@ export const useChat = () => {
               // Reset processing flag before recursive call
               isProcessing.current = false;
 
-              console.log('Action result:', processedResponse.actionResult);
+              console.log("Action result:", processedResponse.actionResult);
               await handleChatMessage(
                 processedResponse.actionResult as any,
-                mode === 'explore' &&
-                  type === 'action' &&
-                  processedResponse.actionResult.match(
-                    /<complete_task>[\s\n]?<\/complete_task>/g,
-                  )
-                  ? 'explore'
-                  : 'action',
                 imageData,
                 processedResponse.omniParserResult, // Pass the omniParserResult to the next call,
               );
-            } else if (exploredOutput && mode === 'explore') {
-              const nextElementToVisit = exploreQueue.shift() || exploredOutput;
-              if (nextElementToVisit) {
-                isProcessing.current = false;
-                await handleChatMessage(
-                  `Task: Visit ${nextElementToVisit.text} on coordinate : ${nextElementToVisit.coordinates} with about this element : ${nextElementToVisit.about_this_element}`,
-                  'action',
-                  imageData,
-                  processedResponse.omniParserResult, // Pass the omniParserResult to the next call,
-                );
-              }
             } else {
               // Mark message as history even when there's no action
               updateLastMessage((msg) => ({
@@ -248,7 +203,7 @@ export const useChat = () => {
         },
         // onError
         (error: Error) => {
-          console.error('Chat Error:', error);
+          console.error("Chat Error:", error);
           if (activeMessageId.current === messageId) {
             setIsChatStreaming(false);
             hasPartialMessage.current = false;
@@ -264,7 +219,7 @@ export const useChat = () => {
             }
 
             addMessage({
-              text: 'Sorry, there was an error processing your message.',
+              text: "Sorry, there was an error processing your message.",
               timestamp: new Date(),
               isUser: false,
               isHistory: false,
@@ -275,7 +230,7 @@ export const useChat = () => {
         saveScreenshots,
       );
     } catch (error) {
-      console.error('Chat Error:', error);
+      console.error("Chat Error:", error);
       if (activeMessageId.current === messageId) {
         setIsChatStreaming(false);
         hasPartialMessage.current = false;
@@ -291,7 +246,7 @@ export const useChat = () => {
         }
 
         addMessage({
-          text: 'Sorry, there was an error processing your message.',
+          text: "Sorry, there was an error processing your message.",
           timestamp: new Date(),
           isUser: false,
           isHistory: false,
@@ -303,7 +258,6 @@ export const useChat = () => {
   const sendMessage = async (
     message: string,
     sendToBackend: boolean = true,
-    type: string = 'action',
     imageData?: string,
   ) => {
     if (!message.trim() || isChatStreaming) return;
@@ -318,7 +272,7 @@ export const useChat = () => {
 
     // Send to backend if needed
     if (sendToBackend) {
-      await handleChatMessage(message, type, imageData);
+      await handleChatMessage(message, imageData);
       // Reset omni parser result after sending
       setLatestOmniParserResult(null);
     }
