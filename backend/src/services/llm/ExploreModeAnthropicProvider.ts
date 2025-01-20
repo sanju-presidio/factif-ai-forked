@@ -53,14 +53,23 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     res.write(`data: ${JSON.stringify(data)}\n\n`);
   }
 
+  private getLastUserMessage(messages: ChatMessage[]): string {
+    let message = "";
+    if (messages.length > 0) {
+      message = messages[0].text;
+    }
+    return message;
+  }
+
   private formatMessagesWithHistory(
     currentMessage: string,
     history: ChatMessage[],
     imageData?: string,
     source?: StreamingSource,
     mode: "explore" | "regression" = "regression",
-    type: "action" | "explore" = "action",
+    type: "action" | "explore" = "explore",
   ): { role: "user" | "assistant"; content: string | any[] }[] {
+    console.log("======= Current message: ", currentMessage);
     const formattedMessages: {
       role: "user" | "assistant";
       content: string | any[];
@@ -68,17 +77,19 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
       ...this.chooseSystemPrompt(
         type,
         source as StreamingSource,
-        type === "action" ? "complete the action" : "",
+        type === "action" ? this.getLastUserMessage(history) : "",
       ),
     ];
 
-    // Add all history messages
-    history.forEach((msg) => {
-      formattedMessages.push({
-        role: msg.isUser ? "user" : ("assistant" as const),
-        content: msg.text,
+    if (type === "action") {
+      // Add all history messages
+      history.forEach((msg) => {
+        formattedMessages.push({
+          role: msg.isUser ? "user" : ("assistant" as const),
+          content: msg.text,
+        });
       });
-    });
+    }
 
     // Add current message with image if present
     if (imageData) {
@@ -170,7 +181,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     message: string,
     history: ChatMessage[] = [],
     mode: "explore" | "regression" = "regression",
-    type: "action" | "explore" = "action",
+    type: "action" | "explore" = "explore",
     source?: StreamingSource,
     imageData?: string,
     omniParserResult?: OmniParserResult,
@@ -208,7 +219,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     message: string,
     history: ChatMessage[] = [],
     mode: "explore" | "regression" = "regression",
-    type: "action" | "explore" = "action",
+    type: "action" | "explore" = "explore",
     source?: StreamingSource,
     imageData?: string,
     omniParserResult?: OmniParserResult,
@@ -264,17 +275,6 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     role: "user" | "assistant";
     content: string | any[];
   }[] {
-    // const assistantMessage: {
-    //   role: "user" | "assistant";
-    //   content: string | any[];
-    // } | null =
-    //   action === "explore"
-    //     ? {
-    //         role: "assistant",
-    //         content:
-    //           "I understand. Before each response, I will:\n\n1. Verify only ONE tool use exists\n2. Check no tool XML in markdown\n3. Validate all parameters\n4. Never combine multiple actions\n\nWhat would you like me to do?",
-    //       }
-    //     : null;
     const message: {
       role: "user" | "assistant";
       content: string | any[];
@@ -287,7 +287,14 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
             : getPerformActionPrompt(source, task),
       },
     ];
-    // assistantMessage && message.push(assistantMessage);
+    if (action === "action") {
+      message.push({
+        role: "assistant",
+        content:
+          "I understand. Before each response, I will:\n\n1. Verify only ONE tool use exists\n2. Check no tool XML in markdown\n3. Validate all parameters\n4. Never combine multiple actions\n\nWhat would you like me to do?",
+      });
+    }
+
     return message;
   }
 }

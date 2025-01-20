@@ -93,7 +93,7 @@ export const useChat = () => {
     imageData?: string,
     omniParserResult?: OmniParserResult,
   ) => {
-    // Prevent multiple simultaneous chat messages
+    // Prevent multiple simultaneous chat s
     if (isProcessing.current) return;
     isProcessing.current = true;
 

@@ -13,7 +13,6 @@ interface ExploreQueueItem {
 
 export const useExploreChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [exploreQueue, setExploreQueue] = useState<ExploreQueueItem[]>([]);
   const [latestOmniParserResult, setLatestOmniParserResult] =
     useState<OmniParserResult | null>(null);
 
@@ -25,6 +24,7 @@ export const useExploreChat = () => {
     currentChatId,
     streamingSource,
     saveScreenshots,
+    setType,
   } = useAppContext();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -32,6 +32,7 @@ export const useExploreChat = () => {
   const activeMessageId = useRef<string | null>(null);
   const isProcessing = useRef(false);
   const messagesRef = useRef<ChatMessage[]>([]);
+  const exploreQueue = useRef<ExploreQueueItem[]>([]);
 
   // Initialize MessageProcessor
   useEffect(() => {
@@ -118,18 +119,26 @@ export const useExploreChat = () => {
   // Process explore output
   const processExploreOutput = (fullResponse: string) => {
     const processedExploreMessage =
-      MessageProcessor.processExploreMessage(fullResponse);
-    if (processedExploreMessage.text && processedExploreMessage.coordinates) {
-      const exploredOutput = {
-        text: processedExploreMessage.text,
-        coordinates: processedExploreMessage.coordinates,
-        about_this_element: processedExploreMessage.about_this_element || "",
-        source: fullResponse,
-      };
-      setExploreQueue((prev) => [...prev, exploredOutput]);
-      return exploredOutput;
+      MessageProcessor.processExploreMessage(fullResponse)?.clickableElements ||
+      [];
+    for (const element of processedExploreMessage) {
+      if (element.text && element.coordinates) {
+        const exploredOutput = {
+          text: element.text,
+          coordinates: element.coordinates,
+          about_this_element: element.aboutThisElement || "",
+          source: fullResponse,
+        };
+        exploreQueue.current.push(exploredOutput);
+      }
     }
-    return null;
+    localStorage.setItem(
+      "started_explore",
+      JSON.stringify(exploreQueue.current),
+    );
+    return processedExploreMessage.length > 0
+      ? processedExploreMessage[0]
+      : null;
   };
 
   // Handle message completion
@@ -151,7 +160,10 @@ export const useExploreChat = () => {
 
     const exploredOutput = processExploreOutput(fullResponse);
 
-    if (processedResponse.actionResult) {
+    if (
+      processedResponse.actionResult ||
+      fullResponse.includes("<complete_task>")
+    ) {
       if (processedResponse.omniParserResult) {
         setLatestOmniParserResult(processedResponse.omniParserResult);
       }
@@ -162,24 +174,42 @@ export const useExploreChat = () => {
         isHistory: true,
       }));
 
-      addMessage({
-        text: processedResponse.actionResult,
-        timestamp: new Date(),
-        isUser: false,
-        isHistory: false,
-      });
+      processedResponse.actionResult &&
+        addMessage({
+          text: processedResponse.actionResult,
+          timestamp: new Date(),
+          isUser: false,
+          isHistory: false,
+        });
 
       isProcessing.current = false;
+      console.log("====", fullResponse);
 
-      const nextElementToVisit = exploreQueue[0] || exploredOutput;
+      if (fullResponse.includes("<complete_task>")) {
+        setType("explore");
+      }
+
+      await handleExploreMessage(
+        processedResponse.text,
+        fullResponse.includes("<complete_task>") ? "explore" : "action",
+        imageData,
+        processedResponse.omniParserResult,
+      );
+    } else if (exploredOutput) {
+      const nextElementToVisit = exploreQueue.current.shift();
+      console.log("nextElementToVisit ===>", nextElementToVisit);
+      isProcessing.current = false;
+      setType("action");
+      setMessages([]);
       if (nextElementToVisit) {
-        setExploreQueue((prev) => prev.slice(1));
-        await handleExploreMessage(
-          `Task: Visit ${nextElementToVisit.text} on coordinate : ${nextElementToVisit.coordinates} with about this element : ${nextElementToVisit.about_this_element}`,
-          "action",
-          imageData,
-          processedResponse.omniParserResult,
-        );
+        const message = `Visit ${nextElementToVisit.text} on coordinate : ${nextElementToVisit.coordinates} with about this element : ${nextElementToVisit.about_this_element}. You can decide what to do prior to it.`;
+        addMessage({
+          text: message,
+          timestamp: new Date(),
+          isUser: true,
+          isHistory: false,
+        });
+        await handleExploreMessage(message, "action", imageData);
       }
     } else {
       updateLastMessage((msg) => ({
@@ -292,7 +322,6 @@ export const useExploreChat = () => {
       isProcessing.current = false;
       messagesRef.current = [];
       setMessages([]);
-      setExploreQueue([]);
     }
   };
 

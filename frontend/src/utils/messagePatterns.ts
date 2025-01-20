@@ -1,18 +1,18 @@
-import { OmniParserResult } from '../types/chat.types';
+import { OmniParserResult } from "../types/chat.types";
 
 export interface FollowupQuestion {
-  type: 'followup_question';
+  type: "followup_question";
   question: string;
 }
 
 export interface CompleteTask {
-  type: 'complete_task';
+  type: "complete_task";
   result: string;
   command?: string;
 }
 
 export interface PerformAction {
-  type: 'perform_action';
+  type: "perform_action";
   action: string;
   url?: string;
   coordinate?: string;
@@ -21,8 +21,8 @@ export interface PerformAction {
 }
 
 export interface ActionResult {
-  type: 'action_result';
-  status: 'success' | 'error';
+  type: "action_result";
+  status: "success" | "error";
   message: string;
   screenshot?: string;
   omniParserResult: OmniParserResult;
@@ -33,7 +33,7 @@ export type MessagePart =
   | CompleteTask
   | PerformAction
   | ActionResult
-  | { type: 'text'; content: string };
+  | { type: "text"; content: string };
 
 export interface IProcessedMessagePart {
   length: number;
@@ -60,23 +60,23 @@ export class MessagePatterns {
     // Define all possible tag pairs with their closing tags
     const tagPairs = [
       {
-        open: '<ask_followup_question>',
-        close: '</ask_followup_question>',
+        open: "<ask_followup_question>",
+        close: "</ask_followup_question>",
         processor: this.processFollowupQuestion.bind(this),
       },
       {
-        open: '<complete_task>',
-        close: '</complete_task>',
+        open: "<complete_task>",
+        close: "</complete_task>",
         processor: this.processCompleteTaskMatch.bind(this),
       },
       {
-        open: '<perform_action>',
-        close: '</perform_action>',
+        open: "<perform_action>",
+        close: "</perform_action>",
         processor: this.performActionMatch.bind(this),
       },
       {
-        open: '<perform_action_result>',
-        close: '</perform_action_result>',
+        open: "<perform_action_result>",
+        close: "</perform_action_result>",
         processor: this.performActionResultMatch.bind(this),
       },
     ];
@@ -96,7 +96,7 @@ export class MessagePatterns {
         // No more tags found, add remaining text if any
         if (remainingText.trim()) {
           parts.push({
-            type: 'text',
+            type: "text",
             content: remainingText.trim(),
           });
         }
@@ -112,7 +112,7 @@ export class MessagePatterns {
       const preText = remainingText.slice(0, earliestTag.index).trim();
       if (preText) {
         parts.push({
-          type: 'text',
+          type: "text",
           content: preText,
         });
       }
@@ -126,7 +126,7 @@ export class MessagePatterns {
       if (closeIndex === -1) {
         // No closing tag found, treat the opening tag as text
         parts.push({
-          type: 'text',
+          type: "text",
           content: remainingText.slice(
             earliestTag.index,
             earliestTag.index + earliestTag.pair.open.length,
@@ -168,7 +168,7 @@ export class MessagePatterns {
       match = {
         length: fullMatch.length,
         part: {
-          type: 'perform_action',
+          type: "perform_action",
           action: actionMatch[1],
           ...(actionMatch[2] && { url: actionMatch[2] }),
           ...(actionMatch[3] && { coordinate: actionMatch[3] }),
@@ -189,8 +189,8 @@ export class MessagePatterns {
       match = {
         length: fullMatch.length,
         part: {
-          type: 'action_result',
-          status: resultMatch[1] as 'success' | 'error',
+          type: "action_result",
+          status: resultMatch[1] as "success" | "error",
           message: resultMatch[2],
           ...(resultMatch[3] && { screenshot: resultMatch[3] }),
           ...(resultMatch[4] && {
@@ -212,7 +212,7 @@ export class MessagePatterns {
       match = {
         length: fullMatch.length,
         part: {
-          type: 'complete_task',
+          type: "complete_task",
           result,
           ...(command && { command }),
         } as CompleteTask,
@@ -229,7 +229,7 @@ export class MessagePatterns {
     if (question) {
       match = {
         length: fullMatch.length,
-        part: { type: 'followup_question', question } as FollowupQuestion,
+        part: { type: "followup_question", question } as FollowupQuestion,
       };
     }
     return match;
@@ -240,7 +240,7 @@ export class MessagePatterns {
     if (!match) return null;
 
     return {
-      type: 'perform_action',
+      type: "perform_action",
       action: match[1],
       ...(match[2] && { url: match[2] }),
       ...(match[3] && { coordinate: match[3] }),
@@ -250,23 +250,19 @@ export class MessagePatterns {
   }
 
   static processExploreOutput(inputString: string) {
-    // Regex patterns to extract the required data
-    const textPattern = /<text>(.*?)<\/text>/;
-    const coordinatesPattern = /<coordinates>(.*?)<\/coordinates>/;
-    const aboutPattern = /<about_this_element>(.*?)<\/about_this_element>/;
+    const regex =
+      /<clickable_element>[\s\S]*?<text>(.*?)<\/text>[\s\S]*?<coordinates>(.*?)<\/coordinates>[\s\S]*?<about_this_element>(.*?)<\/about_this_element>[\s\S]*?<\/clickable_element>/g;
+    const clickableElements = [];
+    let match;
 
-    // Extract the data using regex
-    const textMatch = inputString.match(textPattern);
-    const coordinatesMatch = inputString.match(coordinatesPattern);
-    const aboutMatch = inputString.match(aboutPattern);
+    while ((match = regex.exec(inputString)) !== null) {
+      clickableElements.push({
+        text: match[1].trim(),
+        coordinates: match[2].trim(),
+        aboutThisElement: match[3].trim(),
+      });
+    }
 
-    // Format the extracted data into the desired object
-    return {
-      text: textMatch ? textMatch[1].trim() : null,
-      coordinates: coordinatesMatch
-        ? coordinatesMatch[1].replace(/\s+/g, '').trim()
-        : null,
-      about_this_element: aboutMatch ? aboutMatch[1].trim() : null,
-    };
+    return { clickableElements };
   }
 }

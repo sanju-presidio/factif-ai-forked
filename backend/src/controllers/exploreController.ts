@@ -19,7 +19,11 @@ export class ExploreController {
       const currentChatId = req.query.currentChatId as string;
       const source = req.query.source as StreamingSource | undefined;
       const saveScreenshots = req.query.saveScreenshots as string;
-      const type = req.query.type as "action" | "explore";
+      let type = req.query.type as string;
+
+      if (type == "undefined") {
+        type = "explore";
+      }
 
       if (!message || !Array.isArray(history)) {
         res.status(400).json({
@@ -48,7 +52,7 @@ export class ExploreController {
           message,
           history,
           "explore",
-          "explore",
+          type as "explore" | "action",
           finalImageData,
           source,
           omniParserResult,

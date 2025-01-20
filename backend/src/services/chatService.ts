@@ -41,7 +41,7 @@ export class ChatService {
     message: string,
     history: ChatMessage[] = [],
     mode: "explore" | "regression" = "regression",
-    type: "action" | "explore" = "action",
+    type: "action" | "explore" = "explore",
     imageData?: string,
     source?: StreamingSource,
     omniParserResult?: OmniParserResult,
