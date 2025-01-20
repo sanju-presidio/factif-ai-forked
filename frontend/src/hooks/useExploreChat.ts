@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { sendExploreChatMessage } from "../services/api";
+import { getCurrentUrl, sendExploreChatMessage } from "../services/api";
 import { ChatMessage, OmniParserResult } from "../types/chat.types";
 import { useAppContext } from "../contexts/AppContext";
 import { MessageProcessor } from "../services/messageProcessor";
@@ -117,10 +117,15 @@ export const useExploreChat = () => {
   };
 
   // Process explore output
-  const processExploreOutput = (fullResponse: string) => {
+  const processExploreOutput = async (fullResponse: string) => {
     const processedExploreMessage =
       MessageProcessor.processExploreMessage(fullResponse)?.clickableElements ||
       [];
+    let url: string | null = null;
+    if (processedExploreMessage.length > 0) {
+      url = await getCurrentUrl();
+      console.log("url ===>", url);
+    }
     for (const element of processedExploreMessage) {
       if (element.text && element.coordinates) {
         const exploredOutput = {
@@ -128,6 +133,7 @@ export const useExploreChat = () => {
           coordinates: element.coordinates,
           about_this_element: element.aboutThisElement || "",
           source: fullResponse,
+          url,
         };
         exploreQueue.current.push(exploredOutput);
       }
@@ -158,7 +164,7 @@ export const useExploreChat = () => {
       streamingSource,
     );
 
-    const exploredOutput = processExploreOutput(fullResponse);
+    const exploredOutput = await processExploreOutput(fullResponse);
 
     if (
       processedResponse.actionResult ||

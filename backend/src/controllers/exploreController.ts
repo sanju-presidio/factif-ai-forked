@@ -3,7 +3,7 @@ import { ChatService } from "../services/chatService";
 import { StreamingSource } from "../types/stream.types";
 import { TestcaseController } from "./testcaseController";
 import { getLatestScreenshot, saveScreenshot } from "../utils/screenshotUtils";
-import { modernizeOutput } from "../prompts/modernize-output.prompt";
+import { PuppeteerActions } from "../services/implementations/puppeteer/PuppeteerActions";
 
 export class ExploreController {
   static async handleExploreMessage(
@@ -71,6 +71,14 @@ export class ExploreController {
     res.json({
       status: "ok",
       message: "Explore mode is running",
+    });
+  }
+
+  static async handleExploreCurrentPath(_req: Request, res: Response) {
+    const url = await PuppeteerActions.getCurrentUrl();
+    console.log("======= url fetching ======", url);
+    res.json({
+      url,
     });
   }
 }

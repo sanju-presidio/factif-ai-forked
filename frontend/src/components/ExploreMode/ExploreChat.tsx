@@ -7,7 +7,8 @@ import { Button } from "@nextui-org/react";
 import { Suggestions } from "../Chat/components/Suggestions";
 
 export const ExploreChat = () => {
-  const { currentChatId, setCurrentChatId, isChatStreaming } = useAppContext();
+  const { currentChatId, setCurrentChatId, isChatStreaming, type } =
+    useAppContext();
   const { messages, sendMessage, clearChat, messagesEndRef, stopStreaming } =
     useExploreChat();
 
@@ -18,7 +19,7 @@ export const ExploreChat = () => {
   }, [currentChatId, setCurrentChatId]);
 
   const handleSendMessage = (message: string) => {
-    sendMessage(message, true);
+    sendMessage(message, true, type).then();
   };
 
   const handleClearChat = () => {

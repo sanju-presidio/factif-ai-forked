@@ -306,3 +306,13 @@ export const sendExploreChatMessage = async (
 
   return cleanup;
 };
+
+export const getCurrentUrl = async (): Promise<string | null> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/explore/current-path`);
+    const data: { url: string } = await response.json();
+    return data.url;
+  } catch (e) {
+    return null;
+  }
+};

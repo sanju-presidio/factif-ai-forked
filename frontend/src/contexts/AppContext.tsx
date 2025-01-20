@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
-import { StreamingSource } from '@/types/api.types.ts';
+import React, { createContext, useContext, useState } from "react";
+import { StreamingSource } from "@/types/api.types.ts";
 
 interface AppContextType {
   isChatStreaming: boolean;
@@ -29,7 +29,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const useAppContext = () => {
   const context = useContext(AppContext);
   if (context === undefined) {
-    throw new Error('useAppContext must be used within an AppProvider');
+    throw new Error("useAppContext must be used within an AppProvider");
   }
   return context;
 };
@@ -39,15 +39,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [isChatStreaming, setIsChatStreaming] = useState(false);
   const [hasActiveAction, setHasActiveAction] = useState(false);
-  const [folderPath, setFolderPath] = useState('');
-  const [currentChatId, setCurrentChatId] = useState('');
+  const [folderPath, setFolderPath] = useState("");
+  const [currentChatId, setCurrentChatId] = useState("");
   const [streamingSource, setStreamingSource] =
-    useState<StreamingSource>('chrome-puppeteer');
+    useState<StreamingSource>("chrome-puppeteer");
   const [saveScreenshots, setSaveScreenshots] = useState(false);
   const [stopCurrentStreaming, setStopCurrentStreaming] = useState(false);
   const [isExplorerCollapsed, setIsExplorerCollapsed] = useState(true);
-  const [mode, setMode] = useState<string>('explore');
-  const [type, setType] = useState<string>('action');
+  const [mode, setMode] = useState<string>("explore");
+  const [type, setType] = useState<string>("explore");
 
   const value = {
     isChatStreaming,

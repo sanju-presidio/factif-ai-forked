@@ -26,6 +26,21 @@ export class PuppeteerActions {
     return Buffer.from(buffer).toString("base64");
   }
 
+  static async getCurrentUrl(): Promise<string> {
+    if (!PuppeteerActions.page) {
+      throw new Error("Browser not launched");
+    }
+    let url = PuppeteerActions.page.url();
+    console.log("===", url);
+    if (!url) {
+      await PuppeteerActions.page.evaluate(() => {
+        url = window.location.href;
+        console.log("===>>>", url);
+      });
+    }
+    return url;
+  }
+
   private static async waitForPageLoad(): Promise<void> {
     if (!PuppeteerActions.page) {
       throw new Error("Browser not launched");
