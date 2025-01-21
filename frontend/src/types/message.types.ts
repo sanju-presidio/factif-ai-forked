@@ -51,3 +51,31 @@ export interface IProcessedMessagePart {
   length: number;
   part: MessagePart;
 }
+
+export interface IExploreGraphData {
+  nodes: {
+    id: string;
+    position: { x: number; y: number };
+    data: { label: string };
+  }[];
+  edges: {
+    id: string;
+    source: string;
+    target: string;
+  }[];
+}
+
+export interface IExploreQueueItem {
+  text: string;
+  coordinates: string;
+  aboutThisElement: string;
+  source: string;
+  url: string;
+  id: string;
+  nodeId: string;
+  parent: {
+    id: string;
+    url: string;
+    nodeId: string;
+  };
+}

@@ -3,13 +3,8 @@ import { getCurrentUrl, sendExploreChatMessage } from "../services/api";
 import { ChatMessage, OmniParserResult } from "../types/chat.types";
 import { useAppContext } from "../contexts/AppContext";
 import { MessageProcessor } from "../services/messageProcessor";
-
-interface ExploreQueueItem {
-  text: string;
-  coordinates: string;
-  about_this_element: string;
-  source: string;
-}
+import { IExploreGraphData, IExploreQueueItem } from "@/types/message.types.ts";
+import { v4 as uuid } from "uuid";
 
 export const useExploreChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -32,7 +27,17 @@ export const useExploreChat = () => {
   const activeMessageId = useRef<string | null>(null);
   const isProcessing = useRef(false);
   const messagesRef = useRef<ChatMessage[]>([]);
-  const exploreQueue = useRef<ExploreQueueItem[]>([]);
+  const exploreQueue = useRef<{ [key in string]: IExploreQueueItem[] }>({});
+  const exploreRoute = useRef<string[]>([]);
+  const exploreGraphData = useRef<IExploreGraphData>({
+    nodes: [],
+    edges: [],
+  });
+  const currentlyExploring = useRef<{
+    url: string;
+    id: string;
+    nodeId: string;
+  } | null>(null);
 
   // Initialize MessageProcessor
   useEffect(() => {
@@ -116,34 +121,103 @@ export const useExploreChat = () => {
     }
   };
 
+  const createConstructNode = (currentNodeId: string, url: string) => {
+    exploreGraphData.current.nodes.push({
+      id: currentNodeId,
+      position: { x: 0, y: 0 },
+      data: { label: url },
+    });
+    localStorage.setItem("MAP", JSON.stringify(exploreGraphData.current));
+  };
+
+  const createEdge = (sourceId: string, targetId: string, edgeId: string) => {
+    exploreGraphData.current.edges.push({
+      id: edgeId,
+      source: sourceId,
+      target: targetId,
+    });
+    localStorage.setItem("MAP", JSON.stringify(exploreGraphData.current));
+  };
+
   // Process explore output
-  const processExploreOutput = async (fullResponse: string) => {
+  const processExploreOutput = async (
+    fullResponse: string,
+    parent: { url: string; id: string; nodeId: string } | null = null,
+  ) => {
     const processedExploreMessage =
       MessageProcessor.processExploreMessage(fullResponse) || [];
     let url: string | null = null;
+    const routeSet = new Set(exploreRoute.current);
+    Object.keys(exploreQueue.current)
+      .filter((key) => exploreQueue.current[key].length === 0)
+      .forEach((key) => {
+        routeSet.delete(key);
+      });
     if (processedExploreMessage.length > 0) {
       url = await getCurrentUrl();
       console.log("url ===>", url);
-    }
-    for (const element of processedExploreMessage) {
-      if (element.text && element.coordinates) {
-        const exploredOutput = {
-          text: element.text,
-          coordinates: element.coordinates,
-          about_this_element: element.aboutThisElement || "",
-          source: fullResponse,
-          url,
-        };
-        exploreQueue.current.push(exploredOutput);
+      if (url && !routeSet.has(url as string)) {
+        routeSet.add(url as string);
+        const nodeId = uuid();
+        createConstructNode(nodeId, url);
+        if (currentlyExploring.current) {
+          createEdge(
+            currentlyExploring.current.nodeId,
+            nodeId,
+            currentlyExploring.current.id,
+          );
+        }
+
+        exploreQueue.current[url] = [];
+        for (const element of processedExploreMessage) {
+          if (element.text && element.coordinates) {
+            const elementId = uuid();
+            const exploredOutput: IExploreQueueItem = {
+              text: element.text,
+              coordinates: element.coordinates,
+              aboutThisElement: element.aboutThisElement || "",
+              source: fullResponse,
+              url,
+              id: elementId,
+              nodeId,
+              parent: {
+                url: (parent?.url as string) || url,
+                nodeId: (parent?.nodeId as string) || nodeId,
+                id: (parent?.id as string) || elementId,
+              },
+            };
+            exploreQueue.current[url].push(exploredOutput);
+          }
+        }
+        localStorage.setItem(
+          "started_explore",
+          JSON.stringify(exploreQueue.current),
+        );
       }
     }
-    localStorage.setItem(
-      "started_explore",
-      JSON.stringify(exploreQueue.current),
-    );
+
+    exploreRoute.current = [...routeSet];
+
     return processedExploreMessage.length > 0
       ? processedExploreMessage[0]
       : null;
+  };
+
+  const getNextToExplore = () => {
+    const route =
+      exploreRoute.current.length > 0 ? exploreRoute.current[0] : null;
+    console.log("route ===>", route);
+    console.log("route ===>", exploreRoute.current);
+    console.log("route ===>", exploreQueue.current);
+    const nextItem = route ? exploreQueue.current[route].shift() : null;
+    if (route && nextItem) {
+      currentlyExploring.current = {
+        url: route,
+        id: nextItem.id,
+        nodeId: nextItem.parent.nodeId,
+      };
+    }
+    return nextItem;
   };
 
   // Handle message completion
@@ -163,7 +237,10 @@ export const useExploreChat = () => {
       streamingSource,
     );
 
-    const exploredOutput = await processExploreOutput(fullResponse);
+    const exploredOutput = await processExploreOutput(
+      fullResponse,
+      currentlyExploring.current,
+    );
 
     if (
       processedResponse.actionResult ||
@@ -201,13 +278,13 @@ export const useExploreChat = () => {
         processedResponse.omniParserResult,
       );
     } else if (exploredOutput) {
-      const nextElementToVisit = exploreQueue.current.shift();
+      const nextElementToVisit = getNextToExplore();
       console.log("nextElementToVisit ===>", nextElementToVisit);
       isProcessing.current = false;
       setType("action");
       setMessages([]);
       if (nextElementToVisit) {
-        const message = `Visit ${nextElementToVisit.text} on coordinate : ${nextElementToVisit.coordinates} with about this element : ${nextElementToVisit.about_this_element}. You can decide what to do prior to it.`;
+        const message = `In ${nextElementToVisit.url} \n Visit ${nextElementToVisit.text} on coordinate : ${nextElementToVisit.coordinates} with about this element : ${nextElementToVisit.aboutThisElement}. You can decide what to do prior to it.`;
         addMessage({
           text: message,
           timestamp: new Date(),
