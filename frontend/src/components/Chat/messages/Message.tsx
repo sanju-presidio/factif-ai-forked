@@ -215,15 +215,21 @@ const MessagePartRenderer = ({ part }: { part: MessagePart }) => {
       return (
         <div className="mt-2 bg-content1 rounded-lg p-3 border border-border">
           <div className="space-y-2">
-            {part.clickableElements.map((item: IExploredClickableElement) => (
-              <div>
-                <span className="text-foreground/60 text-sm">
-                  Action:{" "}
-                  <span className="text-warning font-medium">{item.text}</span>
-                  <span className="text-warning">{item.aboutThisElement}</span>
-                </span>
-              </div>
-            ))}
+            {part.clickableElements.map(
+              (item: IExploredClickableElement, index: number) => (
+                <div
+                  key={item.text}
+                  className="text-sm p-2 border-b border-b-gray-700"
+                >
+                  <span className="text-foreground/60 text-sm">
+                    <span className="text-warning font-medium">
+                      {index + 1}. {item.text}
+                    </span>
+                    <p className="text-sm">{item.aboutThisElement}</p>
+                  </span>
+                </div>
+              ),
+            )}
           </div>
         </div>
       );
