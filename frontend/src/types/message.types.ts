@@ -62,6 +62,9 @@ export interface IExploreGraphData {
     id: string;
     source: string;
     target: string;
+    sourceHandle: string;
+    type: string;
+    label: string;
   }[];
 }
 

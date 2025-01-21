@@ -5,6 +5,7 @@ import { useAppContext } from "../contexts/AppContext";
 import { MessageProcessor } from "../services/messageProcessor";
 import { IExploreGraphData, IExploreQueueItem } from "@/types/message.types.ts";
 import { v4 as uuid } from "uuid";
+import { useExploreModeContext } from "@/contexts/ExploreModeContext.tsx";
 
 export const useExploreChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -22,6 +23,8 @@ export const useExploreChat = () => {
     setType,
   } = useAppContext();
 
+  const { setGraphData } = useExploreModeContext();
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasPartialMessage = useRef(false);
   const activeMessageId = useRef<string | null>(null);
@@ -37,6 +40,7 @@ export const useExploreChat = () => {
     url: string;
     id: string;
     nodeId: string;
+    label: string;
   } | null>(null);
 
   // Initialize MessageProcessor
@@ -122,20 +126,31 @@ export const useExploreChat = () => {
   };
 
   const createConstructNode = (currentNodeId: string, url: string) => {
+    const currentNodelCount = exploreGraphData.current.nodes.length;
     exploreGraphData.current.nodes.push({
       id: currentNodeId,
-      position: { x: 0, y: 0 },
+      position: { x: 200, y: currentNodelCount * 100 },
       data: { label: url },
     });
+    setGraphData(exploreGraphData.current);
     localStorage.setItem("MAP", JSON.stringify(exploreGraphData.current));
   };
 
-  const createEdge = (sourceId: string, targetId: string, edgeId: string) => {
+  const createEdge = (
+    sourceId: string,
+    targetId: string,
+    edgeId: string,
+    label: string,
+  ) => {
     exploreGraphData.current.edges.push({
       id: edgeId,
       source: sourceId,
       target: targetId,
+      sourceHandle: new Date().getTime().toString(),
+      type: "step",
+      label,
     });
+    setGraphData(exploreGraphData.current);
     localStorage.setItem("MAP", JSON.stringify(exploreGraphData.current));
   };
 
@@ -165,6 +180,7 @@ export const useExploreChat = () => {
             currentlyExploring.current.nodeId,
             nodeId,
             currentlyExploring.current.id,
+            currentlyExploring.current.label,
           );
         }
 
@@ -214,7 +230,8 @@ export const useExploreChat = () => {
       currentlyExploring.current = {
         url: route,
         id: nextItem.id,
-        nodeId: nextItem.parent.nodeId,
+        nodeId: nextItem.nodeId,
+        label: nextItem.text,
       };
     }
     return nextItem;
