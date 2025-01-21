@@ -119,8 +119,7 @@ export const useExploreChat = () => {
   // Process explore output
   const processExploreOutput = async (fullResponse: string) => {
     const processedExploreMessage =
-      MessageProcessor.processExploreMessage(fullResponse)?.clickableElements ||
-      [];
+      MessageProcessor.processExploreMessage(fullResponse) || [];
     let url: string | null = null;
     if (processedExploreMessage.length > 0) {
       url = await getCurrentUrl();

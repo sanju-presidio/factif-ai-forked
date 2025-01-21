@@ -1,7 +1,8 @@
-import { executeAction } from './api';
-import { MessagePatterns } from '../utils/messagePatterns';
-import { StreamingSource } from '../types/api.types';
-import { OmniParserResult } from '@/types/chat.types';
+import { executeAction } from "./api";
+import { MessagePatterns } from "../utils/messagePatterns";
+import { StreamingSource } from "../types/api.types";
+import { OmniParserResult } from "@/types/chat.types";
+import { ExploreOutput } from "@/types/message.types.ts";
 
 interface ProcessedMessage {
   text: string;
@@ -36,14 +37,14 @@ export class MessageProcessor {
         const response = await executeAction(action, source);
         MessageProcessor.setHasActiveAction?.(false);
         const actionMessage =
-          response.message || response.error || 'Action completed';
+          response.message || response.error || "Action completed";
 
         // Format action result with XML tags
         const actionResult = `<perform_action_result>
-<action_status>${response.status === 'success' ? 'success' : 'error'}</action_status>
+<action_status>${response.status === "success" ? "success" : "error"}</action_status>
 <action_message>${actionMessage}</action_message>
-${response.screenshot ? `<screenshot>${response.screenshot}</screenshot>` : ''}
-${response.omniParserResult ? `<omni_parser>${JSON.stringify(response.omniParserResult)}</omni_parser>` : ''}
+${response.screenshot ? `<screenshot>${response.screenshot}</screenshot>` : ""}
+${response.omniParserResult ? `<omni_parser>${JSON.stringify(response.omniParserResult)}</omni_parser>` : ""}
 </perform_action_result>`;
 
         // Extract omni parser result if present
@@ -58,9 +59,9 @@ ${response.omniParserResult ? `<omni_parser>${JSON.stringify(response.omniParser
         return { text: chunk, actionResult, omniParserResult };
       } catch (error) {
         MessageProcessor.setHasActiveAction?.(false);
-        console.error('Failed to perform browser action:', error);
+        console.error("Failed to perform browser action:", error);
         const errorMessage =
-          error instanceof Error ? error.message : 'Failed to perform action';
+          error instanceof Error ? error.message : "Failed to perform action";
 
         // Format error result with XML tags
         const actionResult = `<perform_action_result>
@@ -78,6 +79,7 @@ ${response.omniParserResult ? `<omni_parser>${JSON.stringify(response.omniParser
   }
 
   static processExploreMessage(chunk: string) {
-    return MessagePatterns.processExploreOutput(chunk);
+    return (MessagePatterns.processExploreOutput(chunk).part as ExploreOutput)
+      ?.clickableElements;
   }
 }

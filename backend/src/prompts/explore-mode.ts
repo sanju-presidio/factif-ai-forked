@@ -121,16 +121,16 @@ Do not hallucinate on the elements or buttons. You should have 100% visual confi
 
 
 # Output Format
-<output>
+<explore_output>
 <clickable_element>
 <text></text>
 <coordinates></coordinates>
 <about_this_element></about_this_element>
 </clickable_element>
-</output>
+</explore_output>
 
 # Usage
-<output>
+<explore_output>
 <clickable_element>
 <text>login</text>
 <coordinates>124, 340</coordinates>
@@ -141,7 +141,7 @@ Do not hallucinate on the elements or buttons. You should have 100% visual confi
 <coordinates>130, 340</coordinates>
 <about_this_element>Register new account</about_this_element>
 </clickable_element>
-</output>
+</explore_output>
 `;
 
 export const getPerformActionPrompt = (source: string, task: string) =>
