@@ -9,11 +9,15 @@ import {
 import { useExploreModeContext } from "@/contexts/ExploreModeContext.tsx";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useState } from "react";
+import PageNode from "@/components/ExploreMode/PageNode.tsx";
 
 export function ExploreGraph() {
   const { graphData } = useExploreModeContext();
   const [nodes, setNodes] = useState(graphData.nodes);
   const [edges, setEdges] = useState(graphData.edges);
+  const nodeTypes = {
+    pageNode: PageNode,
+  };
 
   const onNodesChange = useCallback(
     (changes: any) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -36,6 +40,8 @@ export function ExploreGraph() {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         fitView
+        nodeTypes={nodeTypes}
+        snapToGrid={true}
       >
         <Controls />
         <Background />

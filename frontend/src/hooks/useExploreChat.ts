@@ -130,7 +130,8 @@ export const useExploreChat = () => {
     exploreGraphData.current.nodes.push({
       id: currentNodeId,
       position: { x: 200, y: currentNodelCount * 100 },
-      data: { label: url },
+      data: { label: url, edges: [] },
+      type: "pageNode",
     });
     setGraphData(exploreGraphData.current);
     localStorage.setItem("MAP", JSON.stringify(exploreGraphData.current));
@@ -146,9 +147,14 @@ export const useExploreChat = () => {
       id: edgeId,
       source: sourceId,
       target: targetId,
-      sourceHandle: new Date().getTime().toString(),
+      sourceHandle: edgeId,
       type: "step",
       label,
+    });
+    exploreGraphData.current.nodes.map((node) => {
+      if (node.id === sourceId) {
+        node.data.edges = [...node.data.edges, edgeId];
+      }
     });
     setGraphData(exploreGraphData.current);
     localStorage.setItem("MAP", JSON.stringify(exploreGraphData.current));

@@ -56,7 +56,8 @@ export interface IExploreGraphData {
   nodes: {
     id: string;
     position: { x: number; y: number };
-    data: { label: string };
+    data: { label: string; edges: string[] };
+    type: string;
   }[];
   edges: {
     id: string;
