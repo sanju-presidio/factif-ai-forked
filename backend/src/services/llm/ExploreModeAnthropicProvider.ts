@@ -126,14 +126,18 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
       : config.llm.anthropic.model;
   }
 
-  buildMessageRequest(modelId: string, messages: any[]): any {
+  buildMessageRequest(
+    modelId: string,
+    messages: any[],
+    stream: boolean = true,
+  ): any {
     const maxTokens =
       config.llm.anthropic.contextConfig?.modelContextWindows[modelId] || 8192;
     return {
       model: modelId,
       max_tokens: maxTokens,
       messages,
-      stream: true as const,
+      stream,
     };
   }
 
