@@ -1,14 +1,9 @@
 import { memo, useEffect } from "react";
 import { Handle, Position } from "@xyflow/react";
+import { INodeData } from "@/types/message.types.ts";
 
 export default memo(
-  ({
-    data,
-    isConnectable,
-  }: {
-    data: { label: string; edges: string[] };
-    isConnectable: boolean;
-  }) => {
+  ({ data, isConnectable }: { data: INodeData; isConnectable: boolean }) => {
     useEffect(() => {
       console.log("on data ===>", data, isConnectable);
     }, [data]);
@@ -21,8 +16,17 @@ export default memo(
           isConnectable={isConnectable}
         />
         <div className="w-36 p-2 rounded border bg-white">
+          {data.imageData && (
+            <img
+              src={data.imageData}
+              alt="page-screenshot"
+              className="w-full"
+            />
+          )}
           <p className="break-words overflow-hidden text-sm">
-            <a href={data.label}>{data.label}</a>
+            <a href={data.label} className="text-xs" target="_blank">
+              {data.label}
+            </a>
           </p>
         </div>
         {data.edges.map((edge) => (

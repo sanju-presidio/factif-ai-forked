@@ -55,7 +55,7 @@ export interface IProcessedMessagePart {
 export interface IExploredNode {
   id: string;
   position: { x: number; y: number };
-  data: { label: string; edges: string[] };
+  data: INodeData;
   type: string;
 }
 
@@ -66,6 +66,12 @@ export interface IExploredEdge {
   sourceHandle: string;
   type: string;
   label: string;
+}
+
+export interface INodeData {
+  label: string;
+  edges: string[];
+  imageData?: string;
 }
 
 export interface IExploreGraphData {

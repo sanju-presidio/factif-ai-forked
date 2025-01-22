@@ -130,12 +130,21 @@ export const useExploreChat = () => {
     }
   };
 
-  const createConstructNode = (currentNodeId: string, url: string) => {
+  const createConstructNode = (
+    currentNodeId: string,
+    data: { label: string; imageData?: string },
+  ) => {
     const currentNodelCount = exploreGraphData.current.nodes.length;
     exploreGraphData.current.nodes.push({
       id: currentNodeId,
       position: { x: 200, y: currentNodelCount * 100 },
-      data: { label: url, edges: [] },
+      data: {
+        label: data.label,
+        edges: [],
+        imageData: data.imageData
+          ? `data:image/png;base64,${data.imageData}`
+          : undefined,
+      },
       type: "pageNode",
     });
     setGraphData(exploreGraphData.current);
@@ -165,12 +174,13 @@ export const useExploreChat = () => {
     localStorage.setItem("MAP", JSON.stringify(exploreGraphData.current));
   };
 
-  const handleEdgeAndNodeCreation = (url: string) => {
+  const handleEdgeAndNodeCreation = (url: string, imageData?: string) => {
     const canCreateNode = createEdgeOrNode(exploreGraphData.current.nodes, url);
     const nodeId = !canCreateNode.createNode
       ? (canCreateNode.node?.id as string)
       : uuid();
-    canCreateNode.createNode && createConstructNode(nodeId, url);
+    canCreateNode.createNode &&
+      createConstructNode(nodeId, { label: url, imageData });
 
     if (currentlyExploring.current) {
       createEdge(
@@ -237,6 +247,7 @@ export const useExploreChat = () => {
   const processExploreOutput = async (
     fullResponse: string,
     parent: { url: string; id: string; nodeId: string } | null = null,
+    imageData?: string,
   ) => {
     const processedExploreMessage =
       MessageProcessor.processExploreMessage(fullResponse) || [];
@@ -252,7 +263,7 @@ export const useExploreChat = () => {
         routeSet.add(url as string);
         exploreQueue.current[url] = [];
       }
-      const nodeId = handleEdgeAndNodeCreation(url);
+      const nodeId = handleEdgeAndNodeCreation(url, imageData);
       handleQueueUpdate(
         processedExploreMessage,
         fullResponse,
@@ -306,6 +317,7 @@ export const useExploreChat = () => {
     const exploredOutput = await processExploreOutput(
       fullResponse,
       currentlyExploring.current,
+      imageData,
     );
 
     if (

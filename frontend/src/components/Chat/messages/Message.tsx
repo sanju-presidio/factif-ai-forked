@@ -219,7 +219,7 @@ const MessagePartRenderer = ({ part }: { part: MessagePart }) => {
               (item: IExploredClickableElement, index: number) => (
                 <div
                   key={item.text}
-                  className="text-sm p-2 border-b border-b-gray-700"
+                  className="text-sm p-2 border-b border-b-gray-700 last:border-b-0"
                 >
                   <span className="text-foreground/60 text-sm">
                     <span className="text-warning font-medium">
