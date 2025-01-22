@@ -52,21 +52,25 @@ export interface IProcessedMessagePart {
   part: MessagePart;
 }
 
+export interface IExploredNode {
+  id: string;
+  position: { x: number; y: number };
+  data: { label: string; edges: string[] };
+  type: string;
+}
+
+export interface IExploredEdge {
+  id: string;
+  source: string;
+  target: string;
+  sourceHandle: string;
+  type: string;
+  label: string;
+}
+
 export interface IExploreGraphData {
-  nodes: {
-    id: string;
-    position: { x: number; y: number };
-    data: { label: string; edges: string[] };
-    type: string;
-  }[];
-  edges: {
-    id: string;
-    source: string;
-    target: string;
-    sourceHandle: string;
-    type: string;
-    label: string;
-  }[];
+  nodes: IExploredNode[];
+  edges: IExploredEdge[];
 }
 
 export interface IExploreQueueItem {

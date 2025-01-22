@@ -13,6 +13,7 @@ import {
   exploreModePrompt,
   getPerformActionPrompt,
 } from "../../prompts/explore-mode";
+import { PuppeteerActions } from "../implementations/puppeteer/PuppeteerActions";
 
 export class ExploreModeAnthropicProvider implements LLMProvider {
   private logMessageRequest(messageRequest: any) {
@@ -68,6 +69,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     source?: StreamingSource,
     mode: "explore" | "regression" = "regression",
     type: "action" | "explore" = "explore",
+    currentPageUrl: string = "",
   ): { role: "user" | "assistant"; content: string | any[] }[] {
     console.log("======= Current message: ", currentMessage);
     const formattedMessages: {
@@ -78,6 +80,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
         type,
         source as StreamingSource,
         type === "action" ? this.getLastUserMessage(history) : "",
+        currentPageUrl,
       ),
     ];
 
@@ -228,6 +231,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     const USER_ROLE = "user";
     try {
       const modelId = this.getModelId();
+      const currentPageUrl = await PuppeteerActions.getCurrentUrl();
       // Format messages with history and image if present
       const formattedMessage = this.formatMessagesWithHistory(
         message,
@@ -236,6 +240,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
         source,
         mode,
         type,
+        currentPageUrl,
       );
       // If omni parser is enabled and we have results, add them to the last user message
       if (config.omniParser.enabled && omniParserResult) {
@@ -271,6 +276,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     action: "action" | "explore",
     source: StreamingSource,
     task: string,
+    currentPageUrl: string,
   ): {
     role: "user" | "assistant";
     content: string | any[];
@@ -284,7 +290,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
         content:
           action === "explore"
             ? exploreModePrompt
-            : getPerformActionPrompt(source, task),
+            : getPerformActionPrompt(source, task, currentPageUrl),
       },
     ];
     if (action === "action") {

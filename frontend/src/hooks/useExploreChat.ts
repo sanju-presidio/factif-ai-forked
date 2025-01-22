@@ -3,9 +3,14 @@ import { getCurrentUrl, sendExploreChatMessage } from "../services/api";
 import { ChatMessage, OmniParserResult } from "../types/chat.types";
 import { useAppContext } from "../contexts/AppContext";
 import { MessageProcessor } from "../services/messageProcessor";
-import { IExploreGraphData, IExploreQueueItem } from "@/types/message.types.ts";
+import {
+  IExploredClickableElement,
+  IExploreGraphData,
+  IExploreQueueItem,
+} from "@/types/message.types.ts";
 import { v4 as uuid } from "uuid";
 import { useExploreModeContext } from "@/contexts/ExploreModeContext.tsx";
+import { createEdgeOrNode } from "@/utils/graph.util.ts";
 
 export const useExploreChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -160,6 +165,74 @@ export const useExploreChat = () => {
     localStorage.setItem("MAP", JSON.stringify(exploreGraphData.current));
   };
 
+  const handleEdgeAndNodeCreation = (url: string) => {
+    const canCreateNode = createEdgeOrNode(exploreGraphData.current.nodes, url);
+    const nodeId = !canCreateNode.createNode
+      ? (canCreateNode.node?.id as string)
+      : uuid();
+    canCreateNode.createNode && createConstructNode(nodeId, url);
+
+    if (currentlyExploring.current) {
+      createEdge(
+        currentlyExploring.current.nodeId,
+        nodeId,
+        currentlyExploring.current.id,
+        currentlyExploring.current.label,
+      );
+    }
+    return nodeId;
+  };
+
+  const handleQueueUpdate = (
+    processedExploreMessage: IExploredClickableElement[],
+    fullResponse: string,
+    url: string,
+    nodeId: string,
+    parent: {
+      url: string;
+      id: string;
+      nodeId: string;
+    } | null,
+  ) => {
+    for (const element of processedExploreMessage) {
+      if (element.text && element.coordinates) {
+        const elementId = uuid();
+        const exploredOutput: IExploreQueueItem = {
+          text: element.text,
+          coordinates: element.coordinates,
+          aboutThisElement: element.aboutThisElement || "",
+          source: fullResponse,
+          url,
+          id: elementId,
+          nodeId,
+          parent: {
+            url: (parent?.url as string) || url,
+            nodeId: (parent?.nodeId as string) || nodeId,
+            id: (parent?.id as string) || elementId,
+          },
+        };
+        exploreQueue.current[url].push(exploredOutput);
+      }
+    }
+    localStorage.setItem(
+      "started_explore",
+      JSON.stringify(exploreQueue.current),
+    );
+  };
+
+  const cleanCompletedQueue = (
+    exploredRoutes: string[],
+    currentQueue: { [key in string]: IExploreQueueItem[] },
+  ): Set<string> => {
+    const routeSet = new Set(exploredRoutes);
+    Object.keys(currentQueue)
+      .filter((key) => currentQueue[key].length === 0)
+      .forEach((key) => {
+        routeSet.delete(key);
+      });
+    return routeSet;
+  };
+
   // Process explore output
   const processExploreOutput = async (
     fullResponse: string,
@@ -167,59 +240,29 @@ export const useExploreChat = () => {
   ) => {
     const processedExploreMessage =
       MessageProcessor.processExploreMessage(fullResponse) || [];
-    let url: string | null = null;
-    const routeSet = new Set(exploreRoute.current);
-    Object.keys(exploreQueue.current)
-      .filter((key) => exploreQueue.current[key].length === 0)
-      .forEach((key) => {
-        routeSet.delete(key);
-      });
-    if (processedExploreMessage.length > 0) {
-      url = await getCurrentUrl();
-      console.log("url ===>", url);
-      if (url && !routeSet.has(url as string)) {
-        routeSet.add(url as string);
-        const nodeId = uuid();
-        createConstructNode(nodeId, url);
-        if (currentlyExploring.current) {
-          createEdge(
-            currentlyExploring.current.nodeId,
-            nodeId,
-            currentlyExploring.current.id,
-            currentlyExploring.current.label,
-          );
-        }
+    const routeSet = cleanCompletedQueue(
+      exploreRoute.current,
+      exploreQueue.current,
+    );
 
+    if (processedExploreMessage.length > 0) {
+      const url = await getCurrentUrl();
+      if (!url) return;
+      if (!routeSet.has(url as string)) {
+        routeSet.add(url as string);
         exploreQueue.current[url] = [];
-        for (const element of processedExploreMessage) {
-          if (element.text && element.coordinates) {
-            const elementId = uuid();
-            const exploredOutput: IExploreQueueItem = {
-              text: element.text,
-              coordinates: element.coordinates,
-              aboutThisElement: element.aboutThisElement || "",
-              source: fullResponse,
-              url,
-              id: elementId,
-              nodeId,
-              parent: {
-                url: (parent?.url as string) || url,
-                nodeId: (parent?.nodeId as string) || nodeId,
-                id: (parent?.id as string) || elementId,
-              },
-            };
-            exploreQueue.current[url].push(exploredOutput);
-          }
-        }
-        localStorage.setItem(
-          "started_explore",
-          JSON.stringify(exploreQueue.current),
-        );
       }
+      const nodeId = handleEdgeAndNodeCreation(url);
+      handleQueueUpdate(
+        processedExploreMessage,
+        fullResponse,
+        url,
+        nodeId,
+        parent,
+      );
     }
 
     exploreRoute.current = [...routeSet];
-
     return processedExploreMessage.length > 0
       ? processedExploreMessage[0]
       : null;

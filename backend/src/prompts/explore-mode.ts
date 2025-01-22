@@ -144,6 +144,11 @@ Do not hallucinate on the elements or buttons. You should have 100% visual confi
 </explore_output>
 `;
 
-export const getPerformActionPrompt = (source: string, task: string) =>
+export const getPerformActionPrompt = (
+  source: string,
+  task: string,
+  pageUrl: string,
+) =>
   `${performActionPrompt}\n Environment Context: ${source}\n
-  Task: ${task}`;
+  Task: ${task} \n
+  Current Page URL: ${pageUrl}`;
