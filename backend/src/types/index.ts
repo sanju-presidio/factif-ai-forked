@@ -21,4 +21,5 @@ export interface StreamResponse {
   isPartial?: boolean;
   isComplete?: boolean;
   isError?: boolean;
+  imageData?: string;
 }

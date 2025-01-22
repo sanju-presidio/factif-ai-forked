@@ -182,7 +182,7 @@ export const sendExploreChatMessage = async (
   currentChatId: string,
   source: "chrome-puppeteer" | "ubuntu-docker-vnc",
   onChunk: (chunk: string) => void,
-  onComplete: () => void,
+  onComplete: (image?: string) => void,
   onError: (error: Error) => void,
   omniParserResult?: OmniParserResult | null,
   saveScreenshots: boolean = false,
@@ -273,7 +273,7 @@ export const sendExploreChatMessage = async (
             if (line.startsWith("data: ")) {
               const data = JSON.parse(line.slice(6));
               if (data.isComplete) {
-                onComplete();
+                onComplete(data?.imageData);
                 return;
               } else if (data.isError) {
                 onError(new Error(data.message));

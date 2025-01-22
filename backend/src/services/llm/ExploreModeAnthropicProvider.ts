@@ -167,7 +167,11 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     }
   }
 
-  async processStreamResponse(stream: any, res: Response): Promise<void> {
+  async processStreamResponse(
+    stream: any,
+    res: Response,
+    imageData?: string,
+  ): Promise<void> {
     for await (const chunk of stream) {
       if (chunk.type === "content_block_delta" && chunk.delta?.text) {
         this.sendStreamResponse(res, {
@@ -180,6 +184,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
       message: "",
       timestamp: Date.now(),
       isComplete: true,
+      imageData,
     });
   }
 
@@ -263,7 +268,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
       this.logMessageRequest(messageRequest);
 
       const stream = await this.client.messages.create(messageRequest);
-      await this.processStreamResponse(stream, res);
+      await this.processStreamResponse(stream, res, imageData);
       return true;
     } catch (error) {
       this.sendStreamResponse(res, {

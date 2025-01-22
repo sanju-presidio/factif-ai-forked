@@ -437,11 +437,11 @@ export const useExploreChat = () => {
           fullResponse += chunk;
           handleMessageChunk(messageId, chunk, fullResponse);
         },
-        () =>
+        (image?: string) =>
           handleMessageCompletion(
             messageId,
             fullResponse,
-            imageData,
+            image,
             omniParserResult,
           ),
         (error: Error) => handleError(messageId, error),
