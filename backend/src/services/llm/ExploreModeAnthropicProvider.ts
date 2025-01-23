@@ -7,15 +7,16 @@ import { OmniParserResult } from "../../types/action.types";
 import { ChatMessage } from "../../types/chat.types";
 import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
-import fs from "fs";
-import path from "path";
 import {
   exploreModePrompt,
   getPerformActionPrompt,
 } from "../../prompts/explore-mode";
 import { PuppeteerActions } from "../implementations/puppeteer/PuppeteerActions";
 import { modernizeOutput } from "../../prompts/modernize-output.prompt";
-import { convertInputToOutput } from "../../utils/conversion-util";
+import {
+  convertInputToOutput,
+  saveFileAndScreenshot,
+} from "../../utils/conversion-util";
 import {
   addOmniParserResults,
   logMessageRequest,
@@ -348,50 +349,13 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
       ],
     });
     const stream = await this.client.messages.create(messageRequest);
-    await this.saveFileAndScreenshot(
-      new Date().getTime().toString(),
+    await saveFileAndScreenshot(
+      `${new Date().getTime().toString()}.md`,
       screenshot,
       "./output",
       convertInputToOutput((stream.content[0] as any)["text"]),
     );
     ExploreModeAnthropicProvider.pageRouter.delete(pageUrl);
     return true;
-  }
-
-  /**
-   * Saves a content file and a screenshot image to the specified directory.
-   *
-   * @param {string} fileName - The base name for the files to be saved (without extension).
-   * @param {string} screenshot - The base64-encoded string representing the screenshot image.
-   * @param {string} directory - The directory path where the files will be saved.
-   * @param {string} content - The text content to be written in the file.
-   * @return {Promise<void>} A promise that resolves when both the file and the screenshot are successfully saved, or rejects if an error occurs.
-   */
-  async saveFileAndScreenshot(
-    fileName: string,
-    screenshot: string,
-    directory: string,
-    content: string,
-  ): Promise<void> {
-    try {
-      // Ensure directory exists
-      if (!fs.existsSync(directory)) {
-        fs.mkdirSync(directory, { recursive: true });
-      }
-
-      // Write the content to a file
-      const filePath = path.join(directory, `${fileName}.txt`);
-      fs.writeFileSync(filePath, content, "utf8");
-      console.log(`File saved at: ${filePath}`);
-
-      // Save the screenshot as an image
-      const screenshotPath = path.join(directory, `${fileName}.jpg`);
-      const base64Data = screenshot.replace(/^data:image\/jpeg;base64,/, ""); // Remove base64 header
-      fs.writeFileSync(screenshotPath, base64Data, "base64");
-      console.log(`Screenshot saved at: ${screenshotPath}`);
-    } catch (error: any) {
-      console.error(`Error saving file and screenshot: ${error?.message}`);
-      throw error;
-    }
   }
 }
