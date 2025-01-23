@@ -4,6 +4,7 @@ import { StreamingSource } from "../types/stream.types";
 import { TestcaseController } from "./testcaseController";
 import { getLatestScreenshot, saveScreenshot } from "../utils/screenshotUtils";
 import { PuppeteerActions } from "../services/implementations/puppeteer/PuppeteerActions";
+import { ExploreActionTypes, Modes } from "../types";
 
 export class ExploreController {
   static async handleExploreMessage(
@@ -51,8 +52,8 @@ export class ExploreController {
           res,
           message,
           history,
-          "explore",
-          type as "explore" | "action",
+          Modes.EXPLORE,
+          type as ExploreActionTypes,
           finalImageData,
           source,
           omniParserResult,

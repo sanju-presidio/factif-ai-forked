@@ -23,3 +23,13 @@ export interface StreamResponse {
   isError?: boolean;
   imageData?: string;
 }
+
+export enum Modes {
+  EXPLORE = "explore",
+  REGRESSION = "regression",
+}
+
+export enum ExploreActionTypes {
+  ACTION = "action",
+  EXPLORE = "explore",
+}

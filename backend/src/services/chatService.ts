@@ -1,13 +1,10 @@
 import { Response } from "express";
 import { config } from "../config";
-import { StreamResponse } from "../types";
+import { ExploreActionTypes, Modes, StreamResponse } from "../types";
 import { ChatMessage } from "../types/chat.types";
 import { StreamingSource } from "../types/stream.types";
 import { OmniParserResult } from "../types/action.types";
 import { LLMProvider } from "./llm/LLMProvider";
-import { AnthropicProvider } from "./llm/AnthropicProvider";
-import { OpenAIProvider } from "./llm/OpenAIProvider";
-import { GeminiProvider } from "./llm/GeminiProvider";
 import { trimHistory } from "../utils/historyManager";
 import { ExploreModeAnthropicProvider } from "./llm/ExploreModeAnthropicProvider";
 
@@ -40,8 +37,8 @@ export class ChatService {
     res: Response,
     message: string,
     history: ChatMessage[] = [],
-    mode: "explore" | "regression" = "regression",
-    type: "action" | "explore" = "explore",
+    mode: Modes = Modes.REGRESSION,
+    type: ExploreActionTypes = ExploreActionTypes.EXPLORE,
     imageData?: string,
     source?: StreamingSource,
     omniParserResult?: OmniParserResult,

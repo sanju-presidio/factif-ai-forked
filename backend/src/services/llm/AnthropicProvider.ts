@@ -8,28 +8,9 @@ import { OmniParserResult } from "../../types/action.types";
 import { ChatMessage } from "../../types/chat.types";
 import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
-import fs from "fs";
-import path from "path";
+import { logMessageRequest } from "../../utils/common.util";
 
 export class AnthropicProvider implements LLMProvider {
-  private logMessageRequest(messageRequest: any) {
-    try {
-      // Create logs directory if it doesn't exist
-      const logsDir = path.join(__dirname, "../../../logs");
-      if (!fs.existsSync(logsDir)) {
-        fs.mkdirSync(logsDir, { recursive: true });
-      }
-
-      // Create a log file with timestamp
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const logFile = path.join(logsDir, `message-request-${timestamp}.json`);
-
-      fs.writeFileSync(logFile, JSON.stringify(messageRequest, null, 2));
-    } catch (error) {
-      console.error("Error logging message request:", error);
-    }
-  }
-
   private client: Anthropic | AnthropicBedrock;
 
   constructor() {
@@ -238,7 +219,7 @@ export class AnthropicProvider implements LLMProvider {
         formattedMessage,
       );
       // Log the message request before sending
-      this.logMessageRequest(messageRequest);
+      logMessageRequest(messageRequest);
 
       const stream = await this.client.messages.create(messageRequest);
       await this.processStreamResponse(stream, res);

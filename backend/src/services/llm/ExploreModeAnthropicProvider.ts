@@ -2,7 +2,7 @@ import { Response } from "express";
 import Anthropic from "@anthropic-ai/sdk";
 import AnthropicBedrock from "@anthropic-ai/bedrock-sdk";
 import { config } from "../../config";
-import { StreamResponse } from "../../types";
+import { ExploreActionTypes, Modes, StreamResponse } from "../../types";
 import { OmniParserResult } from "../../types/action.types";
 import { ChatMessage } from "../../types/chat.types";
 import { StreamingSource } from "../../types/stream.types";
@@ -14,25 +14,15 @@ import {
   getPerformActionPrompt,
 } from "../../prompts/explore-mode";
 import { PuppeteerActions } from "../implementations/puppeteer/PuppeteerActions";
+import { modernizeOutput } from "../../prompts/modernize-output.prompt";
+import { convertInputToOutput } from "../../utils/conversion-util";
+import {
+  addOmniParserResults,
+  logMessageRequest,
+} from "../../utils/common.util";
 
 export class ExploreModeAnthropicProvider implements LLMProvider {
-  private logMessageRequest(messageRequest: any) {
-    try {
-      // Create logs directory if it doesn't exist
-      const logsDir = path.join(__dirname, "../../../logs");
-      if (!fs.existsSync(logsDir)) {
-        fs.mkdirSync(logsDir, { recursive: true });
-      }
-
-      // Create a log file with timestamp
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const logFile = path.join(logsDir, `message-request-${timestamp}.json`);
-
-      fs.writeFileSync(logFile, JSON.stringify(messageRequest, null, 2));
-    } catch (error) {
-      console.error("Error logging message request:", error);
-    }
-  }
+  static pageRouter = new Set<string>();
 
   private client: Anthropic | AnthropicBedrock;
 
@@ -67,11 +57,10 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     history: ChatMessage[],
     imageData?: string,
     source?: StreamingSource,
-    mode: "explore" | "regression" = "regression",
-    type: "action" | "explore" = "explore",
+    _mode: Modes = Modes.REGRESSION,
+    type: ExploreActionTypes = ExploreActionTypes.EXPLORE,
     currentPageUrl: string = "",
   ): { role: "user" | "assistant"; content: string | any[] }[] {
-    console.log("======= Current message: ", currentMessage);
     const formattedMessages: {
       role: "user" | "assistant";
       content: string | any[];
@@ -79,12 +68,14 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
       ...this.chooseSystemPrompt(
         type,
         source as StreamingSource,
-        type === "action" ? this.getLastUserMessage(history) : "",
+        type === ExploreActionTypes.ACTION
+          ? this.getLastUserMessage(history)
+          : "",
         currentPageUrl,
       ),
     ];
 
-    if (type === "action") {
+    if (type === ExploreActionTypes.ACTION) {
       // Add all history messages
       history.forEach((msg) => {
         formattedMessages.push({
@@ -141,32 +132,6 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     };
   }
 
-  addOmniParserResults(
-    messages: any[],
-    omniParserResult: OmniParserResult,
-    userRole: string,
-  ): void {
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage.role === userRole) {
-      const content = Array.isArray(lastMessage.content)
-        ? lastMessage.content[0].text
-        : lastMessage.content;
-      const updatedContent = `${content}\n\nOmni Parser Results:\n${JSON.stringify(
-        {
-          label_coordinates: omniParserResult.label_coordinates,
-          parsed_content: omniParserResult.parsed_content,
-        },
-        null,
-        2,
-      )}`;
-      if (Array.isArray(lastMessage.content)) {
-        lastMessage.content[0].text = updatedContent;
-      } else {
-        lastMessage.content = updatedContent;
-      }
-    }
-  }
-
   async processStreamResponse(
     stream: any,
     res: Response,
@@ -188,17 +153,34 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     });
   }
 
+  /**
+   * Streams a response based on the provided parameters and handles retries in case of failures.
+   *
+   * @param {Response} res - The HTTP response object to which the streamed response will be sent.
+   * @param {string} message - The message to process and stream.
+   * @param {ChatMessage[]} [history=[]] - The chat history containing previous messages, defaults to an empty array.
+   * @param {Modes} [mode=Modes.REGRESSION] - The operational mode to use, default is `Modes.REGRESSION`.
+   * @param {ExploreActionTypes} [type=ExploreActionTypes.EXPLORE] - The type of the action being processed, defaults to `ExploreActionTypes.EXPLORE`.
+   * @param {StreamingSource} [source] - The source from which the streaming is initiated (optional).
+   * @param {string} [imageData] - Any accompanying image data, if applicable (optional).
+   * @param {OmniParserResult} [omniParserResult] - Parsed results from an OmniParser, if provided (optional).
+   * @param {number} [retryCount=config.retryAttemptCount] - The number of retry attempts allowed, defaults to the system configuration.
+   * @return {Promise<void>} Resolves when the streaming process is complete or fails after exhausting retry attempts.
+   */
   async streamResponse(
     res: Response,
     message: string,
     history: ChatMessage[] = [],
-    mode: "explore" | "regression" = "regression",
-    type: "action" | "explore" = "explore",
+    mode: Modes = Modes.REGRESSION,
+    type: ExploreActionTypes = ExploreActionTypes.EXPLORE,
     source?: StreamingSource,
     imageData?: string,
     omniParserResult?: OmniParserResult,
     retryCount: number = config.retryAttemptCount,
   ): Promise<void> {
+    type === ExploreActionTypes.EXPLORE &&
+      (await this.generateComponentDescription());
+
     const retryArray = new Array(retryCount).fill(0);
     let isRetrySuccessful = false;
     for (let _ of retryArray) {
@@ -226,16 +208,29 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     }
   }
 
+  /**
+   * Processes a stream message request and sends a streaming response.
+   *
+   * @param {Response} res - The response object used to send data back to the client.
+   * @param {string} message - The message to be processed.
+   * @param {ChatMessage[]} [history=[]] - An optional array of chat message history.
+   * @param {Modes} [mode=Modes.REGRESSION] - The operational mode for processing the message.
+   * @param {ExploreActionTypes} [type=ExploreActionTypes.EXPLORE] - The type of action being explored.
+   * @param {StreamingSource} [source] - An optional source of the streaming request.
+   * @param {string} [imageData] - An optional base64 image string related to the message.
+   * @param {OmniParserResult} [omniParserResult] - An optional result from the OmniParser for additional context.
+   * @return {Promise<boolean>} A promise that resolves to true if the stream is processed successfully; otherwise, false.
+   */
   async processStream(
     res: Response,
     message: string,
     history: ChatMessage[] = [],
-    mode: "explore" | "regression" = "regression",
-    type: "action" | "explore" = "explore",
+    mode: Modes = Modes.REGRESSION,
+    type: ExploreActionTypes = ExploreActionTypes.EXPLORE,
     source?: StreamingSource,
     imageData?: string,
     omniParserResult?: OmniParserResult,
-  ) {
+  ): Promise<boolean> {
     console.log("Processing message with history length:", history.length);
     const USER_ROLE = "user";
     try {
@@ -253,11 +248,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
       );
       // If omni parser is enabled and we have results, add them to the last user message
       if (config.omniParser.enabled && omniParserResult) {
-        this.addOmniParserResults(
-          formattedMessage,
-          omniParserResult,
-          USER_ROLE,
-        );
+        addOmniParserResults(formattedMessage, omniParserResult, USER_ROLE);
       }
 
       const messageRequest = this.buildMessageRequest(
@@ -265,7 +256,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
         formattedMessage,
       );
       // Log the message request before sending
-      this.logMessageRequest(messageRequest);
+      logMessageRequest(messageRequest);
 
       const stream = await this.client.messages.create(messageRequest);
       await this.processStreamResponse(stream, res, imageData);
@@ -281,8 +272,17 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     }
   }
 
+  /**
+   * Constructs a system prompt message based on the provided action, source, task, and page URL.
+   *
+   * @param {ExploreActionTypes} action - The type of action to determine the system prompt (e.g., exploration or task-specific action).
+   * @param {StreamingSource} source - The streaming source to be used for the task-specific prompt generation.
+   * @param {string} task - The specific task to be performed, utilized for generating the appropriate system prompt.
+   * @param {string} currentPageUrl - The current page URL to be used as context in the prompt generation.
+   * @return {{role: "user" | "assistant", content: string | any[]}[]} Array of message objects containing roles ("user" or "assistant") and their associated content.
+   */
   chooseSystemPrompt(
-    action: "action" | "explore",
+    action: ExploreActionTypes,
     source: StreamingSource,
     task: string,
     currentPageUrl: string,
@@ -297,12 +297,12 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
       {
         role: "user",
         content:
-          action === "explore"
+          action === ExploreActionTypes.EXPLORE
             ? exploreModePrompt
             : getPerformActionPrompt(source, task, currentPageUrl),
       },
     ];
-    if (action === "action") {
+    if (action === ExploreActionTypes.ACTION) {
       message.push({
         role: "assistant",
         content:
@@ -311,5 +311,87 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     }
 
     return message;
+  }
+
+  /**
+   * Generates a component description based on the current page context.
+   * This involves capturing a screenshot, preparing a message request,
+   * and processing the generated content. Screenshots are saved along
+   * with the output file based on the generated results.
+   *
+   * @return {Promise<boolean>} A promise that resolves to a boolean value indicating
+   * whether the operation was performed successfully. Returns false if the page has
+   * already been processed.
+   */
+  async generateComponentDescription(): Promise<boolean> {
+    const pageUrl = await PuppeteerActions.getCurrentUrl();
+    if (ExploreModeAnthropicProvider.pageRouter.has(pageUrl)) return false;
+    ExploreModeAnthropicProvider.pageRouter.add(pageUrl);
+    const screenshot = await PuppeteerActions.getScreenshot(true);
+    const messageRequest = this.buildMessageRequest(
+      this.getModelId(),
+      [],
+      false,
+    );
+    messageRequest.messages.push({
+      role: "user",
+      content: [
+        { type: "text", text: modernizeOutput },
+        {
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: "image/jpeg",
+            data: screenshot,
+          },
+        },
+      ],
+    });
+    const stream = await this.client.messages.create(messageRequest);
+    await this.saveFileAndScreenshot(
+      new Date().getTime().toString(),
+      screenshot,
+      "./output",
+      convertInputToOutput((stream.content[0] as any)["text"]),
+    );
+    ExploreModeAnthropicProvider.pageRouter.delete(pageUrl);
+    return true;
+  }
+
+  /**
+   * Saves a content file and a screenshot image to the specified directory.
+   *
+   * @param {string} fileName - The base name for the files to be saved (without extension).
+   * @param {string} screenshot - The base64-encoded string representing the screenshot image.
+   * @param {string} directory - The directory path where the files will be saved.
+   * @param {string} content - The text content to be written in the file.
+   * @return {Promise<void>} A promise that resolves when both the file and the screenshot are successfully saved, or rejects if an error occurs.
+   */
+  async saveFileAndScreenshot(
+    fileName: string,
+    screenshot: string,
+    directory: string,
+    content: string,
+  ): Promise<void> {
+    try {
+      // Ensure directory exists
+      if (!fs.existsSync(directory)) {
+        fs.mkdirSync(directory, { recursive: true });
+      }
+
+      // Write the content to a file
+      const filePath = path.join(directory, `${fileName}.txt`);
+      fs.writeFileSync(filePath, content, "utf8");
+      console.log(`File saved at: ${filePath}`);
+
+      // Save the screenshot as an image
+      const screenshotPath = path.join(directory, `${fileName}.jpg`);
+      const base64Data = screenshot.replace(/^data:image\/jpeg;base64,/, ""); // Remove base64 header
+      fs.writeFileSync(screenshotPath, base64Data, "base64");
+      console.log(`Screenshot saved at: ${screenshotPath}`);
+    } catch (error: any) {
+      console.error(`Error saving file and screenshot: ${error?.message}`);
+      throw error;
+    }
   }
 }
