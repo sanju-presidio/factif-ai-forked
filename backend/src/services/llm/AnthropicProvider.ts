@@ -2,13 +2,16 @@ import { Response } from "express";
 import Anthropic from "@anthropic-ai/sdk";
 import AnthropicBedrock from "@anthropic-ai/bedrock-sdk";
 import { config } from "../../config";
-import { StreamResponse } from "../../types";
+import { ExploreActionTypes, Modes, StreamResponse } from "../../types";
 import { SYSTEM_PROMPT } from "../../prompts/systemPrompts";
 import { OmniParserResult } from "../../types/action.types";
 import { ChatMessage } from "../../types/chat.types";
 import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
-import { logMessageRequest } from "../../utils/common.util";
+import {
+  addOmniParserResults,
+  logMessageRequest,
+} from "../../utils/common.util";
 
 export class AnthropicProvider implements LLMProvider {
   private client: Anthropic | AnthropicBedrock;
@@ -104,32 +107,6 @@ export class AnthropicProvider implements LLMProvider {
     };
   }
 
-  addOmniParserResults(
-    messages: any[],
-    omniParserResult: OmniParserResult,
-    userRole: string,
-  ): void {
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage.role === userRole) {
-      const content = Array.isArray(lastMessage.content)
-        ? lastMessage.content[0].text
-        : lastMessage.content;
-      const updatedContent = `${content}\n\nOmni Parser Results:\n${JSON.stringify(
-        {
-          label_coordinates: omniParserResult.label_coordinates,
-          parsed_content: omniParserResult.parsed_content,
-        },
-        null,
-        2,
-      )}`;
-      if (Array.isArray(lastMessage.content)) {
-        lastMessage.content[0].text = updatedContent;
-      } else {
-        lastMessage.content = updatedContent;
-      }
-    }
-  }
-
   async processStreamResponse(stream: any, res: Response): Promise<void> {
     for await (const chunk of stream) {
       if (chunk.type === "content_block_delta" && chunk.delta?.text) {
@@ -150,8 +127,8 @@ export class AnthropicProvider implements LLMProvider {
     res: Response,
     message: string,
     history: ChatMessage[] = [],
-    mode: "explore" | "regression" = "regression",
-    type: "action" | "explore" = "action",
+    mode: Modes = Modes.REGRESSION,
+    type: ExploreActionTypes = ExploreActionTypes.EXPLORE,
     source?: StreamingSource,
     imageData?: string,
     omniParserResult?: OmniParserResult,
@@ -188,8 +165,8 @@ export class AnthropicProvider implements LLMProvider {
     res: Response,
     message: string,
     history: ChatMessage[] = [],
-    mode: "explore" | "regression" = "regression",
-    type: "action" | "explore" = "action",
+    _mode: Modes = Modes.REGRESSION,
+    _type: ExploreActionTypes = ExploreActionTypes.ACTION,
     source?: StreamingSource,
     imageData?: string,
     omniParserResult?: OmniParserResult,
@@ -207,11 +184,7 @@ export class AnthropicProvider implements LLMProvider {
       );
       // If omni parser is enabled and we have results, add them to the last user message
       if (config.omniParser.enabled && omniParserResult) {
-        this.addOmniParserResults(
-          formattedMessage,
-          omniParserResult,
-          USER_ROLE,
-        );
+        addOmniParserResults(formattedMessage, omniParserResult, USER_ROLE);
       }
 
       const messageRequest = this.buildMessageRequest(

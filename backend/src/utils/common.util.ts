@@ -2,7 +2,13 @@ import path from "path";
 import fs from "fs";
 import { OmniParserResult } from "../types/action.types";
 
-export function logMessageRequest(messageRequest: any) {
+/**
+ * Logs the provided message request to a JSON file in the logs directory.
+ *
+ * @param {any} messageRequest - The message request object to be logged. It will be converted to a JSON string format and stored in the log file.
+ * @return {void} This function does not return a value.
+ */
+export function logMessageRequest(messageRequest: any): void {
   try {
     // Create logs directory if it doesn't exist
     const logsDir = path.join(__dirname, "../../../logs");
@@ -20,6 +26,15 @@ export function logMessageRequest(messageRequest: any) {
   }
 }
 
+/**
+ * Updates the last message in the messages array with the Omni Parser results
+ * if the role of the last message matches the provided user role.
+ *
+ * @param {any[]} messages - The array of message objects to be updated.
+ * @param {OmniParserResult} omniParserResult - The result object from the Omni Parser, containing label coordinates and parsed content.
+ * @param {string} userRole - The role of the user to check against the last message's role.
+ * @return {void} No return value. The messages array is modified in place.
+ */
 export function addOmniParserResults(
   messages: any[],
   omniParserResult: OmniParserResult,

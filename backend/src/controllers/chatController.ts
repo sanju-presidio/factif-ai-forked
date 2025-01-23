@@ -8,6 +8,8 @@ import { ExploreActionTypes, Modes } from "../types";
 export class ChatController {
   static async handleChatMessage(req: Request, res: Response): Promise<void> {
     try {
+      !ChatService.isProviderAvailable() &&
+        ChatService.createProvider(Modes.REGRESSION);
       // Get data from request body
       const { message, imageData, history, omniParserResult } = req.body;
 

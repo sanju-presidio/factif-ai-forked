@@ -12,6 +12,8 @@ export class ExploreController {
     res: Response,
   ): Promise<void> {
     try {
+      !ChatService.isProviderAvailable() &&
+        ChatService.createProvider(Modes.EXPLORE);
       // Get data from request body
       const { message, imageData, history, omniParserResult } = req.body;
 
@@ -23,7 +25,7 @@ export class ExploreController {
       let type = req.query.type as string;
 
       if (type == "undefined") {
-        type = "explore";
+        type = ExploreActionTypes.EXPLORE;
       }
 
       if (!message || !Array.isArray(history)) {
