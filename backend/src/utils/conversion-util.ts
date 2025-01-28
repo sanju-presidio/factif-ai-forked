@@ -45,7 +45,7 @@ export const convertInputToOutput = (input: string): string => {
   components.forEach((component) => outputLines.push(`- ${component}`));
   outputLines.push(`\n### Interactions`);
   interactions.forEach((interaction, index) =>
-    outputLines.push(`${index + 1}. ${interaction}`),
+    outputLines.push(`${interaction}`),
   );
 
   return `${outputLines.join("\n")}`;
