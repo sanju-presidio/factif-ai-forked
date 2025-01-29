@@ -356,21 +356,7 @@ export const useExploreChat = () => {
         processedResponse.omniParserResult,
       );
     } else if (exploredOutput) {
-      const nextElementToVisit = getNextToExplore();
-      console.log("nextElementToVisit ===>", nextElementToVisit);
-      isProcessing.current = false;
-      setType("action");
-      setMessages([]);
-      if (nextElementToVisit) {
-        const message = `In ${nextElementToVisit.url} \n Visit ${nextElementToVisit.text} on coordinate : ${nextElementToVisit.coordinates} with about this element : ${nextElementToVisit.aboutThisElement}. You can decide what to do prior to it.`;
-        addMessage({
-          text: message,
-          timestamp: new Date(),
-          isUser: true,
-          isHistory: false,
-        });
-        await handleExploreMessage(message, "action", imageData);
-      }
+      await onGettingExploredMode(imageData);
     } else {
       updateLastMessage((msg) => ({
         ...msg,
@@ -380,6 +366,24 @@ export const useExploreChat = () => {
       setIsChatStreaming(false);
       activeMessageId.current = null;
       isProcessing.current = false;
+    }
+  };
+
+  const onGettingExploredMode = async (imageData: string) => {
+    const nextElementToVisit = getNextToExplore();
+    console.log("nextElementToVisit ===>", nextElementToVisit);
+    isProcessing.current = false;
+    setType("action");
+    setMessages([]);
+    if (nextElementToVisit) {
+      const message = `In ${nextElementToVisit.url} \n Visit ${nextElementToVisit.text} on coordinate : ${nextElementToVisit.coordinates} with about this element : ${nextElementToVisit.aboutThisElement}. You can decide what to do prior to it.`;
+      addMessage({
+        text: message,
+        timestamp: new Date(),
+        isUser: true,
+        isHistory: false,
+      });
+      await handleExploreMessage(message, "action", imageData);
     }
   };
 
