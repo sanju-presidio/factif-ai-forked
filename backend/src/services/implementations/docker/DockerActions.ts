@@ -246,7 +246,8 @@ export class DockerActions {
           "--sync",
           "key",
           "ctrl+l",
-          "ctrl+c"
+          "ctrl+c",
+          "Escape",
         ],
         successMessage: "URL copied from Firefox",
         errorMessage: "Failed to copy URL from Firefox",
@@ -254,13 +255,21 @@ export class DockerActions {
 
       // Retrieve the copied URL from the clipboard
       const result = await DockerCommands.executeCommand({
-        command: ["exec", containerId, "xclip", "-o", "-selection", "clipboard"],
+        command: [
+          "exec",
+          containerId,
+          "xclip",
+          "-o",
+          "-selection",
+          "clipboard",
+        ],
         successMessage: "URL retrieved from clipboard",
         errorMessage: "Failed to retrieve URL from clipboard",
       });
 
       return result.trim();
     } catch (error: any) {
+      console.log("error here");
       throw new Error(error.message || "Failed to get URL");
     }
   }

@@ -267,19 +267,24 @@ export const sendExploreChatMessage = async (
           clearTimeout(connectionTimeout);
 
           const chunk = decoder.decode(value);
+          console.log(chunk.split("\n"));
           const lines = chunk.split("\n").filter((line) => line.trim());
-
+          console.log("lines:", lines);
           for (const line of lines) {
             if (line.startsWith("data: ")) {
-              const data = JSON.parse(line.slice(6));
-              if (data.isComplete) {
-                onComplete(data?.imageData);
-                return;
-              } else if (data.isError) {
-                onError(new Error(data.message));
-                return;
-              } else if (data.message) {
-                onChunk(data.message);
+              try {
+                const data = JSON.parse(line.slice(6));
+                if (data.isComplete) {
+                  onComplete(data?.imageData);
+                  return;
+                } else if (data.isError) {
+                  onError(new Error(data.message));
+                  return;
+                } else if (data.message) {
+                  onChunk(data.message);
+                }
+              } catch (e) {
+                console.log(e);
               }
             }
           }
@@ -307,9 +312,13 @@ export const sendExploreChatMessage = async (
   return cleanup;
 };
 
-export const getCurrentUrl = async (): Promise<string | null> => {
+export const getCurrentUrl = async (
+  source: StreamingSource,
+): Promise<string | null> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/explore/current-path`);
+    const response = await fetch(
+      `${API_BASE_URL}/explore/current-path?source=${source}`,
+    );
     const data: { url: string } = await response.json();
     return data.url;
   } catch (e) {

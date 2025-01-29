@@ -19,8 +19,10 @@ import {
 } from "../../utils/conversion-util";
 import {
   addOmniParserResults,
+  getCurrentUrlBasedOnSource,
   logMessageRequest,
 } from "../../utils/common.util";
+import { getLatestScreenshot } from "../../utils/screenshotUtils";
 
 export class ExploreModeAnthropicProvider implements LLMProvider {
   static pageRouter = new Set<string>();
@@ -179,8 +181,9 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     omniParserResult?: OmniParserResult,
     retryCount: number = config.retryAttemptCount,
   ): Promise<void> {
+    console.log("is image available", !!imageData);
     type === ExploreActionTypes.EXPLORE &&
-      (await this.generateComponentDescription());
+      (await this.generateComponentDescription(source as StreamingSource));
 
     const retryArray = new Array(retryCount).fill(0);
     let isRetrySuccessful = false;
@@ -236,7 +239,17 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     const USER_ROLE = "user";
     try {
       const modelId = this.getModelId();
-      const currentPageUrl = await PuppeteerActions.getCurrentUrl();
+      const currentPageUrl = await getCurrentUrlBasedOnSource(
+        source as StreamingSource,
+      );
+      console.log(
+        "Current page URL:",
+        currentPageUrl,
+        "Source:",
+        source,
+        "Type:",
+        type,
+      );
       // Format messages with history and image if present
       const formattedMessage = this.formatMessagesWithHistory(
         message,
@@ -324,11 +337,14 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
    * whether the operation was performed successfully. Returns false if the page has
    * already been processed.
    */
-  async generateComponentDescription(): Promise<boolean> {
-    const pageUrl = await PuppeteerActions.getCurrentUrl();
+  async generateComponentDescription(
+    source: StreamingSource,
+  ): Promise<boolean> {
+    let pageUrl = await getCurrentUrlBasedOnSource(source);
+    let screenshot = await getLatestScreenshot(source);
+
     if (ExploreModeAnthropicProvider.pageRouter.has(pageUrl)) return false;
     ExploreModeAnthropicProvider.pageRouter.add(pageUrl);
-    const screenshot = await PuppeteerActions.getScreenshot(true);
     const messageRequest = this.buildMessageRequest(
       this.getModelId(),
       [],
@@ -350,7 +366,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     });
     const stream = await this.client.messages.create(messageRequest);
     await saveFileAndScreenshot(
-      `${new Date().getTime().toString()}.md`,
+      `${new Date().getTime().toString()}`,
       screenshot,
       "./output",
       convertInputToOutput((stream.content[0] as any)["text"]),

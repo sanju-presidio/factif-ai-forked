@@ -11,6 +11,7 @@ import {
 import { v4 as uuid } from "uuid";
 import { useExploreModeContext } from "@/contexts/ExploreModeContext.tsx";
 import { createEdgeOrNode } from "@/utils/graph.util.ts";
+import { StreamingSource } from "@/types/api.types.ts";
 
 export const useExploreChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -247,6 +248,7 @@ export const useExploreChat = () => {
   const processExploreOutput = async (
     fullResponse: string,
     parent: { url: string; id: string; nodeId: string } | null = null,
+    streamingSource: StreamingSource,
     imageData?: string,
   ) => {
     const processedExploreMessage =
@@ -257,7 +259,7 @@ export const useExploreChat = () => {
     );
 
     if (processedExploreMessage.length > 0) {
-      const url = await getCurrentUrl();
+      const url = await getCurrentUrl(streamingSource);
       if (!url) return;
       if (!routeSet.has(url as string)) {
         routeSet.add(url as string);
@@ -317,6 +319,7 @@ export const useExploreChat = () => {
     const exploredOutput = await processExploreOutput(
       fullResponse,
       currentlyExploring.current,
+      streamingSource,
       imageData,
     );
 
@@ -369,7 +372,7 @@ export const useExploreChat = () => {
     }
   };
 
-  const onGettingExploredMode = async (imageData: string) => {
+  const onGettingExploredMode = async (imageData: string | undefined) => {
     const nextElementToVisit = getNextToExplore();
     console.log("nextElementToVisit ===>", nextElementToVisit);
     isProcessing.current = false;

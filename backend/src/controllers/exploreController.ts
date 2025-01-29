@@ -3,8 +3,8 @@ import { ChatService } from "../services/chatService";
 import { StreamingSource } from "../types/stream.types";
 import { TestcaseController } from "./testcaseController";
 import { getLatestScreenshot, saveScreenshot } from "../utils/screenshotUtils";
-import { PuppeteerActions } from "../services/implementations/puppeteer/PuppeteerActions";
 import { ExploreActionTypes, Modes } from "../types";
+import { getCurrentUrlBasedOnSource } from "../utils/common.util";
 
 export class ExploreController {
   static async handleExploreMessage(
@@ -78,10 +78,10 @@ export class ExploreController {
   }
 
   static async handleExploreCurrentPath(_req: Request, res: Response) {
-    const url = await PuppeteerActions.getCurrentUrl();
-    console.log("======= url fetching ======", url);
-    res.json({
-      url,
-    });
+    const source = _req.query.source as StreamingSource | undefined;
+    if (!source) return;
+    const url = await getCurrentUrlBasedOnSource(source);
+    console.log("Determined URL:", url);
+    res.json({ url });
   }
 }

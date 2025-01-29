@@ -1,6 +1,10 @@
 import path from "path";
 import fs from "fs";
 import { OmniParserResult } from "../types/action.types";
+import { StreamingSource } from "../types/stream.types";
+import { PuppeteerActions } from "../services/implementations/puppeteer/PuppeteerActions";
+import { DockerCommands } from "../services/implementations/docker/DockerCommands";
+import { DockerActions } from "../services/implementations/docker/DockerActions";
 
 /**
  * Logs the provided message request to a JSON file in the logs directory.
@@ -59,4 +63,30 @@ export function addOmniParserResults(
       lastMessage.content = updatedContent;
     }
   }
+}
+
+export async function getCurrentUrlBasedOnSource(source: StreamingSource) {
+  let pageUrl = "";
+  console.log("coming here");
+  if (source === "chrome-puppeteer") {
+    pageUrl = await PuppeteerActions.getCurrentUrl();
+  } else if (source === "ubuntu-docker-vnc") {
+    try {
+      const containerName = "factif-vnc";
+      const containerStatus =
+        await DockerCommands.checkContainerStatus(containerName);
+      console.log("containerStatus", containerStatus);
+      if (
+        containerStatus.exists &&
+        containerStatus.running &&
+        containerStatus.id
+      ) {
+        pageUrl = await DockerActions.getUrl(containerStatus.id);
+        console.log("pageUrl", pageUrl);
+      }
+    } catch (error) {
+      console.log("No active Docker VNC session");
+    }
+  }
+  return pageUrl;
 }

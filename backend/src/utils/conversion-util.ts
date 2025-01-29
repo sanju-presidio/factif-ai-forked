@@ -62,7 +62,7 @@ export const convertInputToOutput = (input: string): string => {
  */
 export async function saveFileAndScreenshot(
   fileName: string,
-  screenshot: string,
+  screenshot: string | null,
   directory: string,
   content: string,
 ): Promise<void> {
@@ -73,15 +73,17 @@ export async function saveFileAndScreenshot(
     }
 
     // Write the content to a file
-    const filePath = path.join(directory, `${fileName}.txt`);
+    const filePath = path.join(directory, `${fileName}.md`);
     fs.writeFileSync(filePath, content, "utf8");
     console.log(`File saved at: ${filePath}`);
 
-    // Save the screenshot as an image
-    const screenshotPath = path.join(directory, `${fileName}.jpg`);
-    const base64Data = screenshot.replace(/^data:image\/jpeg;base64,/, ""); // Remove base64 header
-    fs.writeFileSync(screenshotPath, base64Data, "base64");
-    console.log(`Screenshot saved at: ${screenshotPath}`);
+    if (screenshot) {
+      // Save the screenshot as an image
+      const screenshotPath = path.join(directory, `${fileName}.jpg`);
+      const base64Data = screenshot.replace(/^data:image\/jpeg;base64,/, ""); // Remove base64 header
+      fs.writeFileSync(screenshotPath, base64Data, "base64");
+      console.log(`Screenshot saved at: ${screenshotPath}`);
+    }
   } catch (error: any) {
     console.error(`Error saving file and screenshot: ${error?.message}`);
     throw error;
