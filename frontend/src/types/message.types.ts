@@ -72,6 +72,7 @@ export interface INodeData {
   label: string;
   edges: string[];
   imageData?: string;
+  [key: string]: unknown;
 }
 
 export interface IExploreGraphData {

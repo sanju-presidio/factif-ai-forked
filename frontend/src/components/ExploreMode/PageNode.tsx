@@ -15,7 +15,7 @@ export default memo(
           onConnect={(params) => console.log("handle onConnect", params)}
           isConnectable={isConnectable}
         />
-        <div className="w-36 p-2 rounded border bg-white">
+        <div className="w-36 p-3 rounded-lg border-2 bg-white shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 border-blue-400">
           {data.imageData && (
             <img
               src={data.imageData}
@@ -23,8 +23,8 @@ export default memo(
               className="w-full"
             />
           )}
-          <p className="break-words overflow-hidden text-sm">
-            <a href={data.label} className="text-xs" target="_blank">
+          <p className="break-words overflow-hidden text-sm mt-2">
+            <a href={data.label} className="text-xs text-blue-600 hover:text-blue-800 hover:underline" target="_blank">
               {data.label}
             </a>
           </p>
