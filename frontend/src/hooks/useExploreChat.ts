@@ -1,17 +1,17 @@
-import { useEffect, useRef, useState } from "react";
-import { getCurrentUrl, sendExploreChatMessage } from "../services/api";
-import { ChatMessage, OmniParserResult } from "../types/chat.types";
-import { useAppContext } from "../contexts/AppContext";
-import { MessageProcessor } from "../services/messageProcessor";
+import {useEffect, useRef, useState} from "react";
+import {getCurrentUrl, sendExploreChatMessage} from "../services/api";
+import {ChatMessage, OmniParserResult} from "../types/chat.types";
+import {useAppContext} from "../contexts/AppContext";
+import {MessageProcessor} from "../services/messageProcessor";
 import {
   IExploredClickableElement,
   IExploreGraphData,
   IExploreQueueItem,
 } from "@/types/message.types.ts";
-import { v4 as uuid } from "uuid";
-import { useExploreModeContext } from "@/contexts/ExploreModeContext.tsx";
-import { createEdgeOrNode } from "@/utils/graph.util.ts";
-import { StreamingSource } from "@/types/api.types.ts";
+import {v4 as uuid} from "uuid";
+import {useExploreModeContext} from "@/contexts/ExploreModeContext.tsx";
+import {createEdgeOrNode} from "@/utils/graph.util.ts";
+import {StreamingSource} from "@/types/api.types.ts";
 
 export const useExploreChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -29,7 +29,7 @@ export const useExploreChat = () => {
     setType,
   } = useAppContext();
 
-  const { setGraphData } = useExploreModeContext();
+  const {setGraphData} = useExploreModeContext();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasPartialMessage = useRef(false);
@@ -70,7 +70,7 @@ export const useExploreChat = () => {
 
   // Scroll management
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({behavior: "smooth"});
   };
 
   useEffect(() => {
@@ -119,7 +119,7 @@ export const useExploreChat = () => {
       isProcessing.current = false;
 
       if (messagesRef.current.some((m) => m.isPartial)) {
-        updateLastMessage((msg) => ({ ...msg, isPartial: false }));
+        updateLastMessage((msg) => ({...msg, isPartial: false}));
       }
 
       addMessage({
@@ -138,7 +138,7 @@ export const useExploreChat = () => {
     const currentNodelCount = exploreGraphData.current.nodes.length;
     exploreGraphData.current.nodes.push({
       id: currentNodeId,
-      position: { x: 200, y: currentNodelCount * 100 },
+      position: {x: 200, y: currentNodelCount * 100},
       data: {
         label: data.label,
         edges: [],
@@ -181,7 +181,7 @@ export const useExploreChat = () => {
       ? (canCreateNode.node?.id as string)
       : uuid();
     canCreateNode.createNode &&
-      createConstructNode(nodeId, { label: url, imageData });
+    createConstructNode(nodeId, {label: url, imageData});
 
     if (currentlyExploring.current) {
       createEdge(
@@ -236,11 +236,12 @@ export const useExploreChat = () => {
     currentQueue: { [key in string]: IExploreQueueItem[] },
   ): Set<string> => {
     const routeSet = new Set(exploredRoutes);
-    Object.keys(currentQueue)
-      .filter((key) => currentQueue[key].length === 0)
-      .forEach((key) => {
-        routeSet.delete(key);
-      });
+    console.log(currentQueue)
+    // Object.keys(currentQueue)
+    //   .filter((key) => currentQueue[key].length === 0)
+    //   .forEach((key) => {
+    //     routeSet.delete(key);
+    //   });
     return routeSet;
   };
 
@@ -262,23 +263,36 @@ export const useExploreChat = () => {
       const url = await getCurrentUrl(streamingSource);
       if (!url) return;
       if (!routeSet.has(url as string)) {
+        if (routeSet.size > 0 && checkTheNewRouteIsFromSameDomain(url, routeSet.keys().next().value as string)){
+          return;
+        }
         routeSet.add(url as string);
         exploreQueue.current[url] = [];
+        const nodeId = handleEdgeAndNodeCreation(url, imageData);
+        handleQueueUpdate(
+          processedExploreMessage,
+          fullResponse,
+          url,
+          nodeId,
+          parent,
+        );
       }
-      const nodeId = handleEdgeAndNodeCreation(url, imageData);
-      handleQueueUpdate(
-        processedExploreMessage,
-        fullResponse,
-        url,
-        nodeId,
-        parent,
-      );
     }
 
     exploreRoute.current = [...routeSet];
     return processedExploreMessage.length > 0
       ? processedExploreMessage[0]
       : null;
+  };
+
+  const checkTheNewRouteIsFromSameDomain = (newRoute: string, existingRoute: string) => {
+    try {
+      const match = (newRoute.match(/^(?:https?:\/\/)?(?:www\.)?([^\/\n]+)/) as Array<string>)[1];
+      const existingDomain = (existingRoute.match(/^(?:https?:\/\/)?(?:www\.)?([^\/\n]+)/) as Array<string>)[1];
+      return match === existingDomain;
+    } catch (e) {
+      return false;
+    }
   };
 
   const getNextToExplore = () => {
@@ -309,7 +323,7 @@ export const useExploreChat = () => {
     if (activeMessageId.current !== messageId) return;
 
     hasPartialMessage.current = false;
-    updateLastMessage((msg) => ({ ...msg, isPartial: false }));
+    updateLastMessage((msg) => ({...msg, isPartial: false}));
 
     const processedResponse = await MessageProcessor.processMessage(
       fullResponse,
@@ -338,12 +352,12 @@ export const useExploreChat = () => {
       }));
 
       processedResponse.actionResult &&
-        addMessage({
-          text: processedResponse.actionResult,
-          timestamp: new Date(),
-          isUser: false,
-          isHistory: false,
-        });
+      addMessage({
+        text: processedResponse.actionResult,
+        timestamp: new Date(),
+        isUser: false,
+        isHistory: false,
+      });
 
       isProcessing.current = false;
       console.log("====", fullResponse);
@@ -387,6 +401,8 @@ export const useExploreChat = () => {
         isHistory: false,
       });
       await handleExploreMessage(message, "action", imageData);
+    } else {
+      setIsChatStreaming(false)
     }
   };
 
