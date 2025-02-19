@@ -10,7 +10,7 @@ You should return the coordinate from the marked list. Do not calculate the coor
 <element>
 <maker_number>marker number in the screenshot given</marker_number>
 <coordinates>center coordinate of the element. Use this value to interact with this element</coordinates>
-<content>text content of the element</content>
+<content>text content of the element. such as label, description etc. Do not hallucinate on this. assume word by word meaning only</content>
 <is_interactable>boolean value denoting whether you can interact with this element or not</is_interactable>
 </element>
 
@@ -173,28 +173,33 @@ Source-specific information:
 Common Actions (Both Sources):
     * click: Single click at a specific x,y coordinate.
         - Use with the \`coordinate\` parameter to specify the location.
-        - Always click in the center of an element based on coordinates from the screenshot.
+        - Use for selecting the element, submitting forms, or other single-click interactions.
+        - Always use prior to type action to ensure the element is selected.
     * type: Type a string of text on the keyboard.
         - Use with the \`text\` parameter to provide the string to type.
         - IMPORTANT: Never use "enter" or "\n" as text input. Instead, use click action to click Enter/Return button when needed.
-        - Before typing, ensure the correct input field is selected/focused and field is empty.
+        - Before typing, ensure the field is already selected by the click action on the field.
         - For multi-line input, split the text and use separate type actions with Enter clicks between them.
         - CRITICAL: When you need to submit a form or press Enter, ALWAYS use a click action on the submit button or Enter key.
         _ AFTER type you might get suggestion/popup from browser just below the field you selected. Verify the data on the popup and use them by clicking on them or ignore them by keyPress Escape. No Exception.
-        - IF the input field is not empty use keyPress control+ a and keyPress Delete to clear the field BEFORE typing.
-        - AFTER each successful type action, next action should be click outside of the input field.
+        - IF the input field is not empty use keyPress control+a and keyPress Delete to clear the field BEFORE typing.
+        - Ensure the \`text\` parameter before sending the response.That should be appropriate to the field you selected.
     * keyPress: Press a specific keyboard key.
         - Use with the \`key\` parameter to specify the key (e.g., "Enter", "Backspace", "Tab").
         - Only use on clearly interactive elements.
         - Common uses: form submission, text deletion, navigation.
     * scroll_down/scroll_up: Scroll the viewport.
-        - Use for exploring more elements that are not available in the current viewport & current element list.
+        - use for locate element
+        - CRITICAL: Use for exploring more elements that are not available in the current screenshot & current element list.
+        - On suggesting you will get new screenshot and new element list.
         - You can perform this action until further scroll is not happening.
 
 Important Notes:
 - Puppeteer: Must start with 'launch' if no screenshot exists
 - Docker: Always analyze screenshot first, no 'launch' action needed
 - Strictly use only one action per response and wait for the "Action Result" before proceeding.
+- After each action check ensure the change visually
+- Locate element using scroll_down/scroll_up action
 
 Usage:
 <perform_action>
