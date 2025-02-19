@@ -24,6 +24,7 @@ export interface ChatMessagesProps {
 
 export interface ComponentPropsWithNode {
   children?: React.ReactNode;
+
   [key: string]: any;
 }
 
@@ -38,10 +39,11 @@ export interface OmniParserResult {
   label_coordinates: {
     [key: string]: [number, number, number, number];
   };
+  processedImage: string;
 }
 
 export interface ActionResult {
-  status: 'success' | 'error';
+  status: "success" | "error";
   message: string;
   screenshot: string; // Base64 encoded screenshot
   screenshotPath?: string; // Optional path if screenshot was saved

@@ -38,7 +38,7 @@ export class StreamingController {
                 const omniParserResults = await omniParserService.processImage(imageBuffer);
 
                 socket.emit('screenshot-snapshot', {
-                    image: screenshot,
+                    image: omniParserResults?.processedImage || screenshot,
                     omniParserResults
                 });
             }

@@ -1,4 +1,5 @@
 import { StreamingSource } from "./stream.types";
+import {OmniParserResponse} from "../services/interfaces/BrowserService";
 
 export interface ActionRequest {
   action: string;
@@ -23,5 +24,5 @@ export interface ActionResponse {
   screenshot: string; // Base64 encoded screenshot
   screenshotPath?: string; // Optional path if screenshot was saved
   error?: string;
-  omniParserResult?: OmniParserResult;
+  omniParserResult?: OmniParserResponse | OmniParserResult;
 }

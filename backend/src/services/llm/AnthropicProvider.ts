@@ -4,12 +4,13 @@ import AnthropicBedrock from "@anthropic-ai/bedrock-sdk";
 import { config } from "../../config";
 import { StreamResponse } from "../../types";
 import { SYSTEM_PROMPT } from "../../prompts/systemPrompts";
-import { OmniParserResult } from "../../types/action.types";
 import { ChatMessage } from "../../types/chat.types";
 import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
 import fs from "fs";
 import path from "path";
+import { OmniParserResponse } from "../interfaces/BrowserService";
+import { getOmniParserSystemPrompt } from "../../prompts/omniParserSystemPrompt";
 
 export class AnthropicProvider implements LLMProvider {
   private logMessageRequest(messageRequest: any) {
@@ -55,6 +56,7 @@ export class AnthropicProvider implements LLMProvider {
     history: ChatMessage[],
     imageData?: string,
     source?: StreamingSource,
+    omniParserResponse?: OmniParserResponse | null,
   ): { role: "user" | "assistant"; content: string | any[] }[] {
     const formattedMessages: {
       role: "user" | "assistant";
@@ -62,7 +64,12 @@ export class AnthropicProvider implements LLMProvider {
     }[] = [
       {
         role: "user",
-        content: SYSTEM_PROMPT(source),
+        content: omniParserResponse
+          ? getOmniParserSystemPrompt(
+              source as string,
+              this.addOmniParserResults(omniParserResponse),
+            )
+          : SYSTEM_PROMPT(source),
       },
       {
         role: "assistant",
@@ -90,7 +97,9 @@ export class AnthropicProvider implements LLMProvider {
             source: {
               type: "base64",
               media_type: "image/jpeg",
-              data: imageData,
+              data: omniParserResponse
+                ? omniParserResponse.processedImage
+                : imageData,
             },
           },
         ],
@@ -122,30 +131,20 @@ export class AnthropicProvider implements LLMProvider {
     };
   }
 
-  addOmniParserResults(
-    messages: any[],
-    omniParserResult: OmniParserResult,
-    userRole: string,
-  ): void {
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage.role === userRole) {
-      const content = Array.isArray(lastMessage.content)
-        ? lastMessage.content[0].text
-        : lastMessage.content;
-      const updatedContent = `${content}\n\nOmni Parser Results:\n${JSON.stringify(
-        {
-          label_coordinates: omniParserResult.label_coordinates,
-          parsed_content: omniParserResult.parsed_content,
-        },
-        null,
-        2,
-      )}`;
-      if (Array.isArray(lastMessage.content)) {
-        lastMessage.content[0].text = updatedContent;
-      } else {
-        lastMessage.content = updatedContent;
-      }
-    }
+  addOmniParserResults(omniParserResult: OmniParserResponse): string {
+    const response = omniParserResult.elements
+      .map((element, index) => {
+        return `
+        <element>
+          <maker_number>${index}</marker_number>
+          <coordinates>${element.coordinates}</coordinates>
+          <content>${element.content}</content>
+          <is_interactable>${element.interactivity}</is_interactable>
+        </element>`;
+      })
+      .join("\n\n");
+    console.log(response);
+    return response;
   }
 
   async processStreamResponse(stream: any, res: Response): Promise<void> {
@@ -170,7 +169,7 @@ export class AnthropicProvider implements LLMProvider {
     history: ChatMessage[] = [],
     source?: StreamingSource,
     imageData?: string,
-    omniParserResult?: OmniParserResult,
+    omniParserResult?: OmniParserResponse,
     retryCount: number = config.retryAttemptCount,
   ): Promise<void> {
     const retryArray = new Array(retryCount).fill(0);
@@ -182,7 +181,7 @@ export class AnthropicProvider implements LLMProvider {
         history,
         source,
         imageData,
-        omniParserResult,
+        omniParserResult as OmniParserResponse,
       );
       if (isRetrySuccessful) {
         return;
@@ -204,7 +203,7 @@ export class AnthropicProvider implements LLMProvider {
     history: ChatMessage[] = [],
     source?: StreamingSource,
     imageData?: string,
-    omniParserResult?: OmniParserResult,
+    omniParserResult?: OmniParserResponse,
   ) {
     console.log("Processing message with history length:", history.length);
     const USER_ROLE = "user";
@@ -216,15 +215,8 @@ export class AnthropicProvider implements LLMProvider {
         history,
         imageData,
         source,
+        omniParserResult || null,
       );
-      // If omni parser is enabled and we have results, add them to the last user message
-      if (config.omniParser.enabled && omniParserResult) {
-        this.addOmniParserResults(
-          formattedMessage,
-          omniParserResult,
-          USER_ROLE,
-        );
-      }
 
       const messageRequest = this.buildMessageRequest(
         modelId,
