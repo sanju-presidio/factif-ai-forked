@@ -130,7 +130,7 @@ export class PuppeteerActions {
 
       return {
         status: 'success',
-        message: 'I am not sure whether action succeeded or not. check yourself using the screenshot and element list available. If you see the change, then it succeeded. If not, then it failed.',
+        message: 'I am not sure whether action succeeded or not. check yourself using the screenshot and element list available. If it is a type action you should be able to see the text on the filed you type. If you see the change, then it succeeded. If not, then it failed.',
         screenshot,
       };
     } catch (error: any) {
@@ -170,7 +170,7 @@ export class PuppeteerActions {
 
       return {
         status: 'success',
-        message: 'I am not sure whether action succeeded or not. check yourself using the screenshot and element list available. If you see the text you typed, then it succeeded. If not, then it failed.',
+        message: 'I am not sure whether action succeeded or not. check yourself using the screenshot and element list available. If it is a type action you should be able to see the text on the filed you type. If you see the change, then it succeeded. If not, then it failed.',
         screenshot,
       };
     } catch (error: any) {
@@ -238,7 +238,7 @@ export class PuppeteerActions {
 
       return {
         status: 'success',
-        message: 'I am not sure whether action succeeded or not. check yourself using the screenshot and element list available. If you see the change, then it succeeded. If not, then it failed.',
+        message: 'I am not sure whether action succeeded or not. check yourself using the screenshot and element list available. If it is a type action you should be able to see the text on the filed you type. If you see the change, then it succeeded. If not, then it failed.',
         screenshot,
       };
     } catch (error: any) {

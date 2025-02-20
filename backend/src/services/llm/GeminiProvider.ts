@@ -8,10 +8,11 @@ import {
 import { config } from "../../config";
 import { StreamResponse } from "../../types";
 import { SYSTEM_PROMPT } from "../../prompts/systemPrompts";
-import { OmniParserResult } from "../../types/action.types";
+import { getOmniParserSystemPrompt } from "../../prompts/omniParserSystemPrompt";
 import { ChatMessage } from "../../types/chat.types";
 import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
+import { OmniParserResponse } from "../interfaces/BrowserService";
 
 export class GeminiProvider implements LLMProvider {
   private client: GoogleGenerativeAI;
@@ -60,19 +61,36 @@ export class GeminiProvider implements LLMProvider {
     res.write(`data: ${JSON.stringify(data)}\n\n`);
   }
 
+  private addOmniParserResults(omniParserResult: OmniParserResponse): string {
+    const response = omniParserResult.elements
+      .map((element, index) => {
+        return `
+        <element>
+          <marker_number>${index}</marker_number>
+          <coordinates>${element.coordinates}</coordinates>
+          <content>${element.content}</content>
+          <is_intractable>${element.interactivity}</is_intractable>
+        </element>`;
+      })
+      .join("\n\n");
+    console.log(response);
+    return response;
+  }
+
   private formatMessagesWithHistory(
     currentMessage: string,
     history: ChatMessage[],
     source?: StreamingSource,
-    omniParserResult?: OmniParserResult,
+    omniParserResult?: OmniParserResponse,
   ) {
-    const systemPrompt = SYSTEM_PROMPT(source, !!omniParserResult) || "";
+    const systemPrompt = omniParserResult
+      ? getOmniParserSystemPrompt(
+          source as string,
+          this.addOmniParserResults(omniParserResult),
+        )
+      : SYSTEM_PROMPT(source);
 
-    // Add omni parser results if available and enabled
-    const finalMessage =
-      config.omniParser.enabled && omniParserResult
-        ? `${currentMessage}\n\nOmni Parser Results:\n${JSON.stringify(omniParserResult, null, 2)}`
-        : currentMessage;
+    const finalMessage = currentMessage;
     // Start with verification acknowledgment
     const formattedHistory = [
       {
@@ -102,7 +120,7 @@ export class GeminiProvider implements LLMProvider {
     history: ChatMessage[] = [],
     source?: StreamingSource,
     imageData?: string,
-    omniParserResult?: OmniParserResult,
+    omniParserResult?: OmniParserResponse,
     retryCount: number = config.retryAttemptCount,
   ): Promise<void> {
     const retryArray = new Array(retryCount).fill(0);
@@ -135,7 +153,7 @@ export class GeminiProvider implements LLMProvider {
     history: ChatMessage[] = [],
     source?: StreamingSource,
     imageData?: string,
-    omniParserResult?: OmniParserResult,
+    omniParserResult?: OmniParserResponse,
   ): Promise<boolean> {
     try {
       console.log(

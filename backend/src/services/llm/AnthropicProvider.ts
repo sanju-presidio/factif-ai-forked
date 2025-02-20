@@ -139,7 +139,7 @@ export class AnthropicProvider implements LLMProvider {
           <maker_number>${index}</marker_number>
           <coordinates>${element.coordinates}</coordinates>
           <content>${element.content}</content>
-          <is_interactable>${element.interactivity}</is_interactable>
+          <is_intractable>${element.interactivity}</is_intractable>
         </element>`;
       })
       .join("\n\n");

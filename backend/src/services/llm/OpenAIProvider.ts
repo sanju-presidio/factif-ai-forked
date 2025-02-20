@@ -3,10 +3,11 @@ import OpenAI, { AzureOpenAI } from "openai";
 import { config } from "../../config";
 import { StreamResponse } from "../../types";
 import { SYSTEM_PROMPT } from "../../prompts/systemPrompts";
-import { OmniParserResult } from "../../types/action.types";
+import { getOmniParserSystemPrompt } from "../../prompts/omniParserSystemPrompt";
 import { ChatMessage } from "../../types/chat.types";
 import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
+import { OmniParserResponse } from "../interfaces/BrowserService";
 
 export class OpenAIProvider implements LLMProvider {
   private client: OpenAI | AzureOpenAI;
@@ -33,14 +34,35 @@ export class OpenAIProvider implements LLMProvider {
     res.write(`data: ${JSON.stringify(data)}\n\n`);
   }
 
+  private addOmniParserResults(omniParserResult: OmniParserResponse): string {
+    const response = omniParserResult.elements
+      .map((element, index) => {
+        return `
+        <element>
+          <marker_number>${index}</marker_number>
+          <coordinates>${element.coordinates}</coordinates>
+          <content>${element.content}</content>
+          <is_intractable>${element.interactivity}</is_intractable>
+        </element>`;
+      })
+      .join("\n\n");
+    console.log(response);
+    return response;
+  }
+
   private formatMessagesWithHistory(
     currentMessage: string,
     history: ChatMessage[],
     source?: StreamingSource,
     imageData?: string,
-    omniParserResult?: OmniParserResult,
+    omniParserResult?: OmniParserResponse,
   ): { role: "system" | "user" | "assistant"; content: string | any[] }[] {
-    const systemPrompt = SYSTEM_PROMPT(source, !!omniParserResult);
+    const systemPrompt = omniParserResult
+      ? getOmniParserSystemPrompt(
+          source as string,
+          this.addOmniParserResults(omniParserResult),
+        )
+      : SYSTEM_PROMPT(source);
 
     const formattedMessages: {
       role: "system" | "user" | "assistant";
@@ -64,19 +86,13 @@ export class OpenAIProvider implements LLMProvider {
       });
     });
 
-    // Add omni parser results if available and enabled
-    const messageText =
-      config.omniParser.enabled && omniParserResult
-        ? `${currentMessage}\n\nOmni Parser Results:\n${JSON.stringify(omniParserResult, null, 2)}`
-        : currentMessage;
-
     // Format the final message based on whether there's image data
     const finalMessage =
       imageData && (!config.omniParser.enabled || !omniParserResult)
         ? {
             role: "user" as const,
             content: [
-              { type: "text", text: messageText },
+              { type: "text", text: currentMessage },
               {
                 type: "image_url",
                 image_url: {
@@ -87,7 +103,7 @@ export class OpenAIProvider implements LLMProvider {
           }
         : {
             role: "user" as const,
-            content: messageText,
+            content: currentMessage,
           };
 
     formattedMessages.push(finalMessage);
@@ -100,7 +116,7 @@ export class OpenAIProvider implements LLMProvider {
     history: ChatMessage[] = [],
     source?: StreamingSource,
     imageData?: string,
-    omniParserResult?: OmniParserResult,
+    omniParserResult?: OmniParserResponse,
     retryCount: number = config.retryAttemptCount,
   ): Promise<void> {
     const retryArray = new Array(retryCount).fill(0);
@@ -133,7 +149,7 @@ export class OpenAIProvider implements LLMProvider {
     history: ChatMessage[] = [],
     source?: StreamingSource,
     imageData?: string,
-    omniParserResult?: OmniParserResult,
+    omniParserResult?: OmniParserResponse,
   ) {
     try {
       console.log("Processing message with history length:", history.length);
