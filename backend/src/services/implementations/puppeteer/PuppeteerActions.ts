@@ -5,17 +5,27 @@ import {
   IPlaywrightAction,
 } from "../../interfaces/BrowserService";
 import { Page } from "playwright";
+import { PuppeteerService } from "./PuppeteerService";
+import { ActionResponse } from "../../../types/action.types";
 
 export class PuppeteerActions {
   private static io: SocketServer;
+  private static puppeteerService: PuppeteerService;
 
-  static initialize(io: SocketServer) {
+  static initialize(io: SocketServer, puppeteerService: PuppeteerService) {
     PuppeteerActions.io = io;
+    PuppeteerActions.puppeteerService = puppeteerService;
   }
 
-  static async click(page: Page, action: IPlaywrightAction): Promise<any> {
+  static async click(
+    page: Page,
+    action: IPlaywrightAction,
+  ): Promise<ActionResponse> {
     if (!action || !action.coordinate) {
-      return "Coordinates are required for click action";
+      return {
+        status: "error",
+        message: "Coordinates are required for click action",
+      };
     }
 
     const res = await page.evaluate((action) => {
@@ -76,7 +86,10 @@ export class PuppeteerActions {
       }
     }, action);
     if (!res.isSuccess) {
-      return res.message;
+      return {
+        status: res.isSuccess ? "success" : "error",
+        message: res.message || "",
+      };
     }
 
     try {
@@ -92,10 +105,16 @@ export class PuppeteerActions {
 
       // Wait for both navigation and click to complete
 
-      return "Click action performed successfully";
+      return {
+        status: "success",
+        message: "Click action performed successfully",
+      };
     } catch (e) {
       console.error("Click action error:", e);
-      return "Click action failed. Please retry";
+      return {
+        status: "error",
+        message: "Click action failed. Please retry",
+      };
     }
   }
 
@@ -113,16 +132,25 @@ export class PuppeteerActions {
     }, action);
     if (isElementFocused) {
       await page.keyboard.type(action!.text as string);
-      return "Type action performed successfully";
+      return {
+        status: "success",
+        message: "Type action performed successfully",
+      };
     } else {
-      return "Element is not focused. Please click on the element first.";
+      return {
+        status: "error",
+        message: "Element is not focused. Please click on the element first.",
+      };
     }
   }
 
-  static async back(page: Page): Promise<string> {
+  static async back(page: Page): Promise<ActionResponse> {
     try {
       if (!page) {
-        return "Browser not launched";
+        return {
+          status: "error",
+          message: "Browser not launched",
+        };
       }
 
       await page.goBack();
@@ -132,18 +160,28 @@ export class PuppeteerActions {
       PuppeteerActions.io?.sockets.emit("url-change", currentUrl);
       PuppeteerActions.io?.sockets.emit("action_performed");
 
-      return "Navigated back successfully";
+      return {
+        status: "success",
+        message: "Navigated back successfully",
+      };
     } catch (error: any) {
       console.error("Failed to navigate back:", error);
-      return "Failed to navigate back";
+      return {
+        status: "error",
+        message: "Failed to navigate back",
+      };
     }
   }
 
   static async keyPress(
     page: Page,
     action: IPlaywrightAction,
-  ): Promise<string> {
-    if (!action.text) return "Text is required for keypress action";
+  ): Promise<ActionResponse> {
+    if (!action.text)
+      return {
+        status: "error",
+        message: "Text is required for keypress action",
+      };
     const isFocused = await page.evaluate((action) => {
       const el = document.elementFromPoint(
         action!.coordinate!.x,
@@ -157,20 +195,32 @@ export class PuppeteerActions {
         newKey = action.text.toLowerCase().replace("control", "ControlOrMeta");
       }
       await page.keyboard.press(newKey, { delay: 10 });
-      return "Keypress action performed successfully";
+      return {
+        status: "success",
+        message: "Keypress action performed successfully",
+      };
     } else {
-      return "Element is not focused. Please click on the element first.";
+      return {
+        status: "error",
+        message: "Element is not focused. Please click on the element first.",
+      };
     }
   }
 
-  static async scrollUp(page: Page): Promise<string> {
+  static async scrollUp(page: Page): Promise<ActionResponse> {
     await page.mouse.wheel(0, -200);
-    return "Scroll up action performed successfully";
+    return {
+      status: "success",
+      message: "Scroll up action performed successfully",
+    };
   }
 
-  static async scrollDown(page: Page): Promise<string> {
+  static async scrollDown(page: Page): Promise<ActionResponse> {
     await page.mouse.wheel(0, 200);
-    return "Scroll up action performed successfully";
+    return {
+      status: "success",
+      message: "Scroll down action performed successfully",
+    };
   }
 
   // page.goto { waitUntil: "networkidle0" } may not ever resolve, and not waiting could return page content too early before js has loaded
@@ -207,5 +257,9 @@ export class PuppeteerActions {
       lastHTMLSize = currentHTMLSize;
       await new Promise((resolve) => setTimeout(resolve, checkDurationMsecs));
     }
+  }
+
+  static async captureScreenshot() {
+    return await PuppeteerActions.puppeteerService.takeScreenshot();
   }
 }

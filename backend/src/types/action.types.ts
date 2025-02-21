@@ -18,9 +18,9 @@ export interface OmniParserResult {
 }
 
 export interface ActionResponse {
-  status: 'success' | 'error';
+  status: "success" | "error";
   message: string;
-  screenshot: string; // Base64 encoded screenshot
+  screenshot?: string; // Base64 encoded screenshot
   screenshotPath?: string; // Optional path if screenshot was saved
   error?: string;
   omniParserResult?: OmniParserResult;

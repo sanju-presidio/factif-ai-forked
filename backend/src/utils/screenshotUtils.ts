@@ -8,7 +8,16 @@ export const getLatestScreenshot = async (
   source?: StreamingSource,
 ): Promise<string | null> => {
   try {
-    if (source === "ubuntu-docker-vnc") {
+    if (source === "chrome-puppeteer") {
+      // For Puppeteer, get screenshot from the active page
+      try {
+        // Since getScreenshot is private, we'll use a dummy action to get a screenshot
+        return PuppeteerActions.captureScreenshot();
+      } catch (error) {
+        console.log("No active Puppeteer session");
+        return null;
+      }
+    } else if (source === "ubuntu-docker-vnc") {
       // For Docker, get screenshot from the active container
       try {
         const containerName = "factif-vnc";

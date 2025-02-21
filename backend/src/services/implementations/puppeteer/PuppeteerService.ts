@@ -7,17 +7,18 @@ import {
 } from "../../interfaces/BrowserService";
 import { createCanvas, loadImage } from "canvas";
 import { Browser, chromium, Page } from "playwright";
+import { ActionResponse } from "../../../types/action.types";
 
 export class PuppeteerService extends BaseStreamingService {
   private isConnected: boolean = false;
-  private static browser: Browser | null = null;
-  private static page: Page | null = null;
+  static browser: Browser | null = null;
+  static page: Page | null = null;
 
   protected screenshotInterval: NodeJS.Timeout | null = null;
 
   constructor(serviceConfig: ServiceConfig) {
     super(serviceConfig);
-    PuppeteerActions.initialize(serviceConfig.io);
+    PuppeteerActions.initialize(serviceConfig.io, this);
   }
 
   async initialize(url: string): Promise<any> {
@@ -46,11 +47,14 @@ export class PuppeteerService extends BaseStreamingService {
   async performAction(
     action: IPlaywrightAction,
     params?: any,
-  ): Promise<string> {
+  ): Promise<ActionResponse> {
     try {
       this.emitConsoleLog("info", `Performing browser action: ${action}`);
       if (!PuppeteerService.page)
-        return "Browser not launched. Please launch the browser first.";
+        return {
+          status: "error",
+          message: "Browser not launched. Please launch the browser first.",
+        };
 
       switch (action.actionType) {
         case "launch":
