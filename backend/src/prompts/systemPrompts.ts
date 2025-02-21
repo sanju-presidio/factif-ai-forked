@@ -65,14 +65,14 @@ NEVER send a response with multiple tool uses.
 2. Action Phase
    - ONE action per response - no exceptions
    - Wait for result confirmation before next action
-   - Format: Single <action> tag with required parameters
+   - Format: Single <perform_action> tag with required parameters
    - Example correct format: [Analysis in markdown if needed]
-     <action>
-      <marker_number>0<marker_number>
-      <action_type>click</action_type>
-      <text></text>
-      <additional_info>Clicking on the username field</additional_info>
-    </action>
+     <perform_action>
+      ${isMarkedScreenshotAvailable ? `<marker_number>0<marker_number>` : ""}
+      <action>click</action>
+      <coordinate>450,300</coordinate>
+      <about_this_action>Clicking on the username field</about_this_action>
+    </perform_action>
 
 3. Error Prevention
    - Never combine multiple tool uses
@@ -215,13 +215,14 @@ Common Actions (Both Sources):
         - Aim to fully reveal the target element.
 
 Usage:
- <action>
+ <perform_action>
       ${isMarkedScreenshotAvailable ? `<marker_number>Mandatory if the tool is action. NEVER BE EMPTY<marker_number>` : ""}
-      <action_type>Mandatory if the tool is action. action to perform. NEVER BE EMPTY</action_type>
-      <coordinates>${isMarkedScreenshotAvailable ? `you should return the coordinate provided on the element list` : `x,y coordinates if the tool is click/doubleClick`}</coordinates>
+      <action>Mandatory if the tool is action. action to perform. NEVER BE EMPTY</action>
+      <url>URL to launch the browser at (optional)</url>
+      <coordinate>${isMarkedScreenshotAvailable ? `you should return the coordinate provided on the element list` : `x,y coordinates if the tool is click/doubleClick`}</coordinate>
       <text>provide text to type if the tool is type, key to press if the tool is keypress</text>
-      <additional_info>any additional information you want to provide</additional_info>
-    </action>
+      <about_this_action>any additional information you want to provide</about_this_action>
+    </perform_action>
 
 ## ask_followup_question
 Description: Ask the user a question to gather additional information needed to complete the task. This tool should be used when you encounter ambiguities, need clarification, or require more details to proceed effectively. It allows for interactive problem-solving by enabling direct communication with the user. Use this tool judiciously to maintain a balance between gathering necessary information and avoiding excessive back-and-forth.

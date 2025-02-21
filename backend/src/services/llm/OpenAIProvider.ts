@@ -78,12 +78,16 @@ export class OpenAIProvider implements LLMProvider {
             role: "user" as const,
             content: [
               { type: "text", text: messageText },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:image/jpeg;base64,${imageData.image}`,
-                },
-              },
+              ...(imageData.image.length > 0
+                ? [
+                    {
+                      type: "image_url",
+                      image_url: {
+                        url: `data:image/jpeg;base64,${imageData.image}`,
+                      },
+                    },
+                  ]
+                : []),
             ],
           }
         : {
