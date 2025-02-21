@@ -32,6 +32,7 @@ export class PuppeteerService extends BaseStreamingService {
       const context = await PuppeteerService.browser.newContext();
       PuppeteerService.page = await context.newPage();
       await PuppeteerService.page.goto(url);
+      await PuppeteerActions.waitTillHTMLStable(PuppeteerService.page);
       this.isConnected = true;
       this.isInitialized = true;
       this.startScreenshotStream();
