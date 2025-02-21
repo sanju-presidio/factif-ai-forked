@@ -27,7 +27,7 @@ export class PuppeteerService extends BaseStreamingService {
       this.emitConsoleLog("info", "Initializing Puppeteer browser...");
 
       PuppeteerService.browser = await chromium.launch({
-        headless: false,
+        headless: true,
       });
       const context = await PuppeteerService.browser.newContext();
       PuppeteerService.page = await context.newPage();
@@ -105,7 +105,7 @@ export class PuppeteerService extends BaseStreamingService {
       }
 
       try {
-        const screenshot = this.takeScreenshot();
+        const screenshot = await this.takeScreenshot();
         if (screenshot) {
           this.io.emit("screenshot-stream", screenshot);
         }
@@ -173,18 +173,21 @@ export class PuppeteerService extends BaseStreamingService {
   }
 
   async takeScreenshot(): Promise<string> {
-    if (!PuppeteerService.browser || !PuppeteerService.page) {
-      throw new Error(
-        "Browser is not launched. Please launch the browser first.",
-      );
+    try {
+      if (!PuppeteerService.browser || !PuppeteerService.page) {
+        throw new Error(
+          "Browser is not launched. Please launch the browser first.",
+        );
+      }
+      const context = PuppeteerService.browser.contexts()[0];
+      const page = context.pages()[0];
+      const buffer = await page.screenshot({ type: "png" });
+      const base64Image = buffer.toString("base64");
+      return base64Image;
+    } catch (e) {
+      console.log(e);
+      return "";
     }
-
-    const buffer = await PuppeteerService.page!.screenshot({ type: "png" });
-    const base64Image = buffer.toString("base64");
-
-    console.log(`Screenshot captured`);
-
-    return base64Image;
   }
 
   async getAllPageElements(): Promise<{
