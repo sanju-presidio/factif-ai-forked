@@ -148,12 +148,18 @@ export class GeminiProvider implements LLMProvider {
         const systemPrompt = SYSTEM_PROMPT(source, !!omniParserResult);
         const result = await this.visionModel.generateContent([
           { text: systemPrompt },
-          {
-            inlineData: {
-              mimeType: "image/jpeg",
-              data: Buffer.from(imageData.image, "base64").toString("base64"),
-            },
-          },
+          ...(imageData.image.length > 0
+            ? [
+                {
+                  inlineData: {
+                    mimeType: "image/jpeg",
+                    data: Buffer.from(imageData.image, "base64").toString(
+                      "base64",
+                    ),
+                  },
+                },
+              ]
+            : []),
           { text: message },
         ]);
 

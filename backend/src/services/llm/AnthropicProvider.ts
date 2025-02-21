@@ -86,14 +86,18 @@ export class AnthropicProvider implements LLMProvider {
         role: "user",
         content: [
           { type: "text", text: currentMessage },
-          {
-            type: "image",
-            source: {
-              type: "base64",
-              media_type: "image/jpeg",
-              data: imageData.image,
-            },
-          },
+          ...(imageData.image.length > 0
+            ? [
+                {
+                  type: "image",
+                  source: {
+                    type: "base64",
+                    media_type: "image/jpeg",
+                    data: imageData.image,
+                  },
+                },
+              ]
+            : []),
         ],
       });
     } else {
