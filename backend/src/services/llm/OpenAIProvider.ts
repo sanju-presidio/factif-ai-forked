@@ -83,7 +83,7 @@ export class OpenAIProvider implements LLMProvider {
                     {
                       type: "image_url",
                       image_url: {
-                        url: `data:image/jpeg;base64,${imageData.image}`,
+                        url: `data:image/png;base64,${imageData.image}`,
                       },
                     },
                   ]

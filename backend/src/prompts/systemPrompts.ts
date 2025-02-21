@@ -1,4 +1,9 @@
 import { StreamingSource } from "../types/stream.types";
+import {
+  IClickableElement,
+  IProcessedScreenshot,
+} from "../services/interfaces/BrowserService";
+import { convertElementsToInput } from "../utils/prompt.util";
 
 const BASE_SYSTEM_PROMPT = (
   isMarkedScreenshotAvailable: boolean,
@@ -255,6 +260,7 @@ Important Notes:
 const getSystemPrompt = (
   source?: StreamingSource,
   hasOmniParserResults: boolean = false,
+  imageData?: IProcessedScreenshot,
 ): string => {
   const isMarkedScreenshotAvailable =
     hasOmniParserResults || source === "chrome-puppeteer";
@@ -262,7 +268,9 @@ const getSystemPrompt = (
 
   if (!source) return prompt;
 
-  return `${prompt}\n\n# Environment Context\nSource: ${source}`;
+  return `${prompt}\n\n# Environment Context\nSource: ${source}
+  ${(imageData?.inference as IClickableElement[]).length > 0 ? `element_list: \n${convertElementsToInput(imageData?.inference as IClickableElement[])}\n\n` : ""}
+   To explore more use scroll_down or scroll_up based on your requirement.`;
 };
 
 export const SYSTEM_PROMPT = getSystemPrompt;

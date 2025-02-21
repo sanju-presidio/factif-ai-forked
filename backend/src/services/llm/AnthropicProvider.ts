@@ -63,7 +63,7 @@ export class AnthropicProvider implements LLMProvider {
     }[] = [
       {
         role: "user",
-        content: SYSTEM_PROMPT(source),
+        content: SYSTEM_PROMPT(source, false, imageData),
       },
       {
         role: "assistant",
@@ -92,8 +92,11 @@ export class AnthropicProvider implements LLMProvider {
                   type: "image",
                   source: {
                     type: "base64",
-                    media_type: "image/jpeg",
-                    data: imageData.image,
+                    media_type: "image/png",
+                    data: imageData.image.replace(
+                      /^data:image\/png;base64,/,
+                      "",
+                    ),
                   },
                 },
               ]

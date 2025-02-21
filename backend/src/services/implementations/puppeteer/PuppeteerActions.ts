@@ -1,4 +1,3 @@
-import * as puppeteer from "puppeteer";
 import { Server as SocketServer } from "socket.io";
 import {
   IClickableElement,
@@ -225,10 +224,7 @@ export class PuppeteerActions {
 
   // page.goto { waitUntil: "networkidle0" } may not ever resolve, and not waiting could return page content too early before js has loaded
   // https://stackoverflow.com/questions/52497252/puppeteer-wait-until-page-is-completely-loaded/61304202#61304202
-  private static async waitTillHTMLStable(
-    page: puppeteer.Page,
-    timeout = 5_000,
-  ) {
+  static async waitTillHTMLStable(page: Page, timeout = 5_000) {
     const checkDurationMsecs = 500; // 500
     const maxChecks = timeout / checkDurationMsecs;
     let lastHTMLSize = 0;
