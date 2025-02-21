@@ -10,6 +10,7 @@ import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
 import fs from "fs";
 import path from "path";
+import { IProcessedScreenshot } from "../interfaces/BrowserService";
 
 export class AnthropicProvider implements LLMProvider {
   private logMessageRequest(messageRequest: any) {
@@ -53,7 +54,7 @@ export class AnthropicProvider implements LLMProvider {
   private formatMessagesWithHistory(
     currentMessage: string,
     history: ChatMessage[],
-    imageData?: string,
+    imageData?: IProcessedScreenshot,
     source?: StreamingSource,
   ): { role: "user" | "assistant"; content: string | any[] }[] {
     const formattedMessages: {
@@ -90,7 +91,7 @@ export class AnthropicProvider implements LLMProvider {
             source: {
               type: "base64",
               media_type: "image/jpeg",
-              data: imageData,
+              data: imageData.image,
             },
           },
         ],
@@ -169,7 +170,7 @@ export class AnthropicProvider implements LLMProvider {
     message: string,
     history: ChatMessage[] = [],
     source?: StreamingSource,
-    imageData?: string,
+    imageData?: IProcessedScreenshot,
     omniParserResult?: OmniParserResult,
     retryCount: number = config.retryAttemptCount,
   ): Promise<void> {
@@ -203,7 +204,7 @@ export class AnthropicProvider implements LLMProvider {
     message: string,
     history: ChatMessage[] = [],
     source?: StreamingSource,
-    imageData?: string,
+    imageData?: IProcessedScreenshot,
     omniParserResult?: OmniParserResult,
   ) {
     console.log("Processing message with history length:", history.length);

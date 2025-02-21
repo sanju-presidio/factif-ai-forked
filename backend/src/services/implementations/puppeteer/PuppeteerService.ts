@@ -2,6 +2,7 @@ import { BaseStreamingService } from "../../base/BaseStreamingService";
 import { ServiceConfig } from "../../../types/stream.types";
 import { PuppeteerActions } from "./PuppeteerActions";
 import {
+  IProcessedScreenshot,
   IClickableElement,
   IPlaywrightAction,
 } from "../../interfaces/BrowserService";
@@ -139,13 +140,7 @@ export class PuppeteerService extends BaseStreamingService {
     this.emitConsoleLog("info", "Browser resources cleaned up");
   }
 
-  async captureScreenshotAndInfer(): Promise<{
-    image: string;
-    inference: IClickableElement[];
-    totalScroll: number;
-    scrollPosition: number;
-    originalImage: string;
-  }> {
+  async captureScreenshotAndInfer(): Promise<IProcessedScreenshot> {
     const base64Image = await this.takeScreenshot();
     const elements: {
       clickableElements: IClickableElement[];

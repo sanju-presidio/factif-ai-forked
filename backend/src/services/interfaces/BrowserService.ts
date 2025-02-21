@@ -6,12 +6,18 @@ export interface ActionResult {
 
 export interface BrowserService {
   launch(url: string): Promise<ActionResult>;
+
   click(x: number, y: number): Promise<ActionResult>;
+
   type(text: string): Promise<ActionResult>;
+
   scrollUp(): Promise<ActionResult>;
+
   scrollDown(): Promise<ActionResult>;
+
   close(): Promise<ActionResult>;
 }
+
 export type ActionType =
   | "click"
   | "type"
@@ -48,4 +54,12 @@ export interface ILLMSuggestedAction {
   task_status: string;
   question: string;
   genericText: string;
+}
+
+export interface IProcessedScreenshot {
+  image: string;
+  inference: IClickableElement[];
+  totalScroll: number;
+  scrollPosition: number;
+  originalImage: string;
 }

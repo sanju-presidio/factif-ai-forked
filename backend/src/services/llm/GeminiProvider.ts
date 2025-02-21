@@ -12,6 +12,7 @@ import { OmniParserResult } from "../../types/action.types";
 import { ChatMessage } from "../../types/chat.types";
 import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
+import { IProcessedScreenshot } from "../interfaces/BrowserService";
 
 export class GeminiProvider implements LLMProvider {
   private client: GoogleGenerativeAI;
@@ -101,7 +102,7 @@ export class GeminiProvider implements LLMProvider {
     message: string,
     history: ChatMessage[] = [],
     source?: StreamingSource,
-    imageData?: string,
+    imageData?: IProcessedScreenshot,
     omniParserResult?: OmniParserResult,
     retryCount: number = config.retryAttemptCount,
   ): Promise<void> {
@@ -134,7 +135,7 @@ export class GeminiProvider implements LLMProvider {
     message: string,
     history: ChatMessage[] = [],
     source?: StreamingSource,
-    imageData?: string,
+    imageData?: IProcessedScreenshot,
     omniParserResult?: OmniParserResult,
   ): Promise<boolean> {
     try {
@@ -150,7 +151,7 @@ export class GeminiProvider implements LLMProvider {
           {
             inlineData: {
               mimeType: "image/jpeg",
-              data: Buffer.from(imageData, "base64").toString("base64"),
+              data: Buffer.from(imageData.image, "base64").toString("base64"),
             },
           },
           { text: message },

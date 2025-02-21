@@ -3,19 +3,27 @@ import path from "path";
 import { StreamingSource } from "../types/stream.types";
 import { PuppeteerActions } from "../services/implementations/puppeteer/PuppeteerActions";
 import { DockerCommands } from "../services/implementations/docker/DockerCommands";
+import { IProcessedScreenshot } from "../services/interfaces/BrowserService";
 
 export const getLatestScreenshot = async (
   source?: StreamingSource,
-): Promise<string | null> => {
+): Promise<IProcessedScreenshot> => {
+  let screenshot: IProcessedScreenshot = {
+    image: "",
+    inference: [],
+    totalScroll: -1,
+    scrollPosition: -1,
+    originalImage: "",
+  };
   try {
     if (source === "chrome-puppeteer") {
       // For Puppeteer, get screenshot from the active page
       try {
         // Since getScreenshot is private, we'll use a dummy action to get a screenshot
-        return PuppeteerActions.captureScreenshot();
+        //infer the screenshot
+        screenshot = await PuppeteerActions.captureScreenshot();
       } catch (error) {
-        console.log("No active Puppeteer session");
-        return null;
+        console.log("No active Puppeteer session", error);
       }
     } else if (source === "ubuntu-docker-vnc") {
       // For Docker, get screenshot from the active container
@@ -29,22 +37,21 @@ export const getLatestScreenshot = async (
           containerStatus.id
         ) {
           const screenshotPath = `/tmp/screenshot_${Date.now()}.png`;
-          const screenshot = await DockerCommands.takeScreenshot(
+          const currentScreenshot = await DockerCommands.takeScreenshot(
             containerStatus.id,
             screenshotPath,
           );
-          return screenshot;
+          screenshot.image = currentScreenshot;
+          screenshot.originalImage = currentScreenshot;
         }
       } catch (error) {
-        console.log("No active Docker VNC session");
-        return null;
+        console.log("No active Docker VNC session", error);
       }
     }
-    return null;
   } catch (error) {
     console.error("Error getting latest screenshot:", error);
-    return null;
   }
+  return screenshot;
 };
 
 export const saveScreenshot = async (

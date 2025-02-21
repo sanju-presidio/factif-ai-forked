@@ -260,6 +260,6 @@ export class PuppeteerActions {
   }
 
   static async captureScreenshot() {
-    return await PuppeteerActions.puppeteerService.takeScreenshot();
+    return await PuppeteerActions.puppeteerService.captureScreenshotAndInfer();
   }
 }

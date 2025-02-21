@@ -7,6 +7,7 @@ import { OmniParserResult } from "../../types/action.types";
 import { ChatMessage } from "../../types/chat.types";
 import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
+import { IProcessedScreenshot } from "../interfaces/BrowserService";
 
 export class OpenAIProvider implements LLMProvider {
   private client: OpenAI | AzureOpenAI;
@@ -37,7 +38,7 @@ export class OpenAIProvider implements LLMProvider {
     currentMessage: string,
     history: ChatMessage[],
     source?: StreamingSource,
-    imageData?: string,
+    imageData?: IProcessedScreenshot,
     omniParserResult?: OmniParserResult,
   ): { role: "system" | "user" | "assistant"; content: string | any[] }[] {
     const systemPrompt = SYSTEM_PROMPT(source, !!omniParserResult);
@@ -80,7 +81,7 @@ export class OpenAIProvider implements LLMProvider {
               {
                 type: "image_url",
                 image_url: {
-                  url: `data:image/jpeg;base64,${imageData}`,
+                  url: `data:image/jpeg;base64,${imageData.image}`,
                 },
               },
             ],
@@ -99,7 +100,7 @@ export class OpenAIProvider implements LLMProvider {
     message: string,
     history: ChatMessage[] = [],
     source?: StreamingSource,
-    imageData?: string,
+    imageData?: IProcessedScreenshot,
     omniParserResult?: OmniParserResult,
     retryCount: number = config.retryAttemptCount,
   ): Promise<void> {
@@ -132,7 +133,7 @@ export class OpenAIProvider implements LLMProvider {
     message: string,
     history: ChatMessage[] = [],
     source?: StreamingSource,
-    imageData?: string,
+    imageData?: IProcessedScreenshot,
     omniParserResult?: OmniParserResult,
   ) {
     try {

@@ -14,7 +14,7 @@ export class ChatController {
       const folderPath = req.query.folderPath as string;
       const currentChatId = req.query.currentChatId as string;
       const source = req.query.source as StreamingSource | undefined;
-      const saveScreenshots = req.query.saveScreenshots as string
+      const saveScreenshots = req.query.saveScreenshots as string;
 
       if (!message || !Array.isArray(history)) {
         res.status(400).json({
@@ -26,9 +26,14 @@ export class ChatController {
 
       // Get latest screenshot if available
       const latestScreenshot = await getLatestScreenshot(source);
-      const finalImageData = latestScreenshot || imageData;
       await Promise.all([
-        folderPath && saveScreenshots === 'true' && saveScreenshot(finalImageData, folderPath, currentChatId),
+        folderPath &&
+          saveScreenshots === "true" &&
+          saveScreenshot(
+            latestScreenshot!.originalImage,
+            folderPath,
+            currentChatId,
+          ),
         folderPath &&
           TestcaseController.downloadTestcase(
             history,
@@ -39,7 +44,7 @@ export class ChatController {
           res,
           message,
           history,
-          finalImageData,
+          latestScreenshot,
           source,
           omniParserResult,
         ),
