@@ -35,6 +35,7 @@ export class PuppeteerService extends BaseStreamingService {
       this.isConnected = true;
       this.isInitialized = true;
       this.startScreenshotStream();
+      return { success: true, message: "Puppeteer browser initialized" };
     } catch (error: any) {
       this.emitConsoleLog(
         "error",
