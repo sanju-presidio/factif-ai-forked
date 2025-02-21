@@ -218,7 +218,7 @@ Usage:
  <perform_action>
       ${isMarkedScreenshotAvailable ? `<marker_number>Mandatory if the tool is action. NEVER BE EMPTY<marker_number>` : ""}
       <action>Mandatory if the tool is action. action to perform. NEVER BE EMPTY</action>
-      <url>URL to launch the browser at (optional)</url>
+      <url>URL to launch the browser at (optional) if action is launch then URL is mandatory</url>
       <coordinate>${isMarkedScreenshotAvailable ? `you should return the coordinate provided on the element list` : `x,y coordinates if the tool is click/doubleClick`}</coordinate>
       <text>provide text to type if the tool is type, key to press if the tool is keypress</text>
       <about_this_action>any additional information you want to provide</about_this_action>

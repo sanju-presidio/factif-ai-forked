@@ -64,7 +64,6 @@ class ActionExecutorService {
             return {
               status: "error",
               message: "URL is required for launch action",
-              screenshot: "",
             };
           }
           const result = await service.initialize(request.url);
