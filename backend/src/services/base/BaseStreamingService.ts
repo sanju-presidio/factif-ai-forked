@@ -1,7 +1,6 @@
 import { Server as SocketServer } from "socket.io";
 import { ServiceConfig } from "../../types/stream.types";
-import { ActionResponse } from "../../types/action.types";
-import { IPlaywrightAction } from "../interfaces/BrowserService";
+import { ActionRequest, ActionResponse } from "../../types/action.types";
 
 export abstract class BaseStreamingService {
   protected io: SocketServer;
@@ -27,7 +26,7 @@ export abstract class BaseStreamingService {
   }
 
   abstract performAction(
-    action: string | IPlaywrightAction,
+    action: string | ActionRequest,
     params?: any,
   ): Promise<ActionResponse | string>;
 

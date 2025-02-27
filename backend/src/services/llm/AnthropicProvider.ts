@@ -10,7 +10,11 @@ import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
 import fs from "fs";
 import path from "path";
-import { IProcessedScreenshot } from "../interfaces/BrowserService";
+import {
+  IClickableElement,
+  IProcessedScreenshot,
+} from "../interfaces/BrowserService";
+import { convertElementsToInput } from "../../utils/prompt.util";
 
 export class AnthropicProvider implements LLMProvider {
   private logMessageRequest(messageRequest: any) {
@@ -98,6 +102,14 @@ export class AnthropicProvider implements LLMProvider {
                       "",
                     ),
                   },
+                },
+              ]
+            : []),
+          ...(imageData.inference.length > 0
+            ? [
+                {
+                  type: "text",
+                  text: this.addElementsList(imageData.inference),
                 },
               ]
             : []),
@@ -225,7 +237,7 @@ export class AnthropicProvider implements LLMProvider {
         imageData,
         source,
       );
-      // If omni parser is enabled and we have results, add them to the last user message
+      // If omni parser is enabled, and we have results, add them to the last user message
       if (config.omniParser.enabled && omniParserResult) {
         this.addOmniParserResults(
           formattedMessage,
@@ -253,5 +265,9 @@ export class AnthropicProvider implements LLMProvider {
 
       return false;
     }
+  }
+
+  addElementsList(elements: IClickableElement[]) {
+    return `## Elements List:\n ${convertElementsToInput(elements)}`;
   }
 }

@@ -4,10 +4,9 @@ import {
   StreamingSource,
   ServiceConfig,
 } from "../types/stream.types";
-import { ActionResponse } from "../types/action.types";
+import { ActionRequest, ActionResponse } from "../types/action.types";
 import { PuppeteerService } from "./implementations/puppeteer/PuppeteerService";
 import { DockerVNCService } from "./implementations/docker/DockerVNCService";
-import { IPlaywrightAction } from "./interfaces/BrowserService";
 
 class StreamingSourceService {
   private service: StreamingService;
@@ -57,7 +56,7 @@ class StreamingSourceService {
   }
 
   async performAction(
-    action: string | IPlaywrightAction,
+    action: string | ActionRequest,
     params?: any,
   ): Promise<ActionResponse | string> {
     try {

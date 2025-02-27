@@ -41,7 +41,7 @@ export class OpenAIProvider implements LLMProvider {
     imageData?: IProcessedScreenshot,
     omniParserResult?: OmniParserResult,
   ): { role: "system" | "user" | "assistant"; content: string | any[] }[] {
-    const systemPrompt = SYSTEM_PROMPT(source, !!omniParserResult);
+    const systemPrompt = SYSTEM_PROMPT(source, !!omniParserResult, imageData);
 
     const formattedMessages: {
       role: "system" | "user" | "assistant";

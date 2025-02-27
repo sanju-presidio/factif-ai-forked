@@ -4,11 +4,10 @@ import { PuppeteerActions } from "./PuppeteerActions";
 import {
   IProcessedScreenshot,
   IClickableElement,
-  IPlaywrightAction,
 } from "../../interfaces/BrowserService";
 import { createCanvas, loadImage } from "canvas";
 import { Browser, chromium, Page } from "playwright";
-import { ActionResponse } from "../../../types/action.types";
+import { ActionRequest, ActionResponse } from "../../../types/action.types";
 
 export class PuppeteerService extends BaseStreamingService {
   private isConnected: boolean = false;
@@ -22,7 +21,7 @@ export class PuppeteerService extends BaseStreamingService {
     PuppeteerActions.initialize(serviceConfig.io, this);
   }
 
-  async initialize(url: string): Promise<any> {
+  async initialize(url: string): Promise<ActionResponse> {
     try {
       this.emitConsoleLog("info", "Initializing Puppeteer browser...");
 
@@ -36,7 +35,7 @@ export class PuppeteerService extends BaseStreamingService {
       this.isConnected = true;
       this.isInitialized = true;
       this.startScreenshotStream();
-      return { success: true, message: "Puppeteer browser initialized" };
+      return { status: "success", message: "Puppeteer browser initialized" };
     } catch (error: any) {
       this.emitConsoleLog(
         "error",
@@ -48,7 +47,7 @@ export class PuppeteerService extends BaseStreamingService {
   }
 
   async performAction(
-    action: IPlaywrightAction,
+    action: ActionRequest,
     params?: any,
   ): Promise<ActionResponse> {
     try {
@@ -59,7 +58,7 @@ export class PuppeteerService extends BaseStreamingService {
           message: "Browser not launched. Please launch the browser first.",
         };
 
-      switch (action.actionType) {
+      switch (action.action) {
         case "launch":
           return this.initialize(params?.url);
         case "click":
@@ -75,7 +74,7 @@ export class PuppeteerService extends BaseStreamingService {
         case "back":
           return await PuppeteerActions.back(PuppeteerService.page);
         default:
-          throw new Error(`Unsupported action type: ${action.actionType}`);
+          throw new Error(`Unsupported action type: ${action}`);
       }
     } catch (error: any) {
       this.emitConsoleLog(

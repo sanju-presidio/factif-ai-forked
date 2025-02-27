@@ -24,7 +24,7 @@ Use element_list & marker_number to have an idea about available elements. Handl
 
 example element_list: 
 [0]: <button>Login</button>:[200,300]:[visible in the current viewport] 
-[1]: <input type="text" placeholder="Username"></input>:[125, 400]: [Not available in current viewport. Available on scroll]
+[1]: <input type="text" placeholder="Username">:[125, 400]: [Not available in current viewport. Available on scroll]
 `
     : ""
 }
@@ -55,7 +55,7 @@ NEVER send a response with multiple tool uses.
 
 1. Analysis Phase
    - Start with screenshot analysis and make a clear-cut idea about the current screenshot and state of the application
-   - Start with task analysis in markdown format
+   - Start with task analysis in Markdown format
    - Identify: goal, current state, required tools, source
    - Plan sequential steps
    - Before identifying next step:
@@ -73,10 +73,10 @@ NEVER send a response with multiple tool uses.
    - Format: Single <perform_action> tag with required parameters
    - Example correct format: [Analysis in markdown if needed]
      <perform_action>
-      ${isMarkedScreenshotAvailable ? `<marker_number>0<marker_number>` : ""}
       <action>click</action>
       <coordinate>450,300</coordinate>
       <about_this_action>Clicking on the username field</about_this_action>
+      ${isMarkedScreenshotAvailable ? `<marker_number>0<marker_number>` : ""}
     </perform_action>
 
 3. Error Prevention
@@ -186,13 +186,13 @@ Source-Specific Actions:
         * launch: Launch a new browser instance at the specified URL.
             - Required as first action if no screenshot exists and if the source is Puppeteer.
             - Use with \`url\` parameter.
-            - URL must include protocol (http://, file://, etc.).
+            - URL must include protocol (https://, file://, etc.).
         * back: Navigate to previous page.
             - No additional parameters needed.
             - Use for testing navigation flows.
 
     Docker Only:
-        * doubleClick: Double click at x,y coordinate.
+        * doubleClick: Double-click at x,y coordinate.
           - Use with the \`coordinate\` parameter to specify the location.
           - Useful for opening applications, files, selecting text, or other double-click interactions.
             
@@ -209,7 +209,6 @@ Common Actions (Both Sources):
         _ AFTER type you might get suggestion/popup from browser just below the field you selected. Verify the data on the popup and use them by clicking on them or ignore them by keyPress Escape. No Exception.
         - IF the input field is not empty use keyPress control+ a and keyPress Delete to clear the field BEFORE typing.
         - Use type with select field also
-        - AFTER each successful type action, next action should be click outside of the input field.
     * keyPress: Press a specific keyboard key.
         - Use with the \`key\` parameter to specify the key (e.g., "Enter", "Backspace", "Tab").
         - Only use on clearly interactive elements.
@@ -220,11 +219,12 @@ Common Actions (Both Sources):
         - Aim to fully reveal the target element.
 
 Usage:
- <perform_action>
+    <perform_action>
       <action>Mandatory if the tool is action. action to perform. NEVER BE EMPTY</action>
       <url>URL to launch the browser at (optional) if action is launch then URL is mandatory</url>
-      <coordinate>${isMarkedScreenshotAvailable ? `you should return the coordinate provided on the element list` : `x,y coordinates if the tool is click/doubleClick`}</coordinate>
+      <coordinate>${isMarkedScreenshotAvailable ? `coordinate of the element in which the action has to perform. Coordinate will be available on the element list provided. NEVER BE EMPTY` : `x,y coordinates if the tool is click/doubleClick`}</coordinate>
       <text>provide text to type if the tool is type, key to press if the tool is keypress</text>
+      <key>key to press if the tool is keypress</key>
       <about_this_action>any additional information you want to provide</about_this_action>
       ${isMarkedScreenshotAvailable ? `<marker_number>Mandatory if the tool is action. NEVER BE EMPTY<marker_number>` : ""}
     </perform_action>

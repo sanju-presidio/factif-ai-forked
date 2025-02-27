@@ -1,11 +1,8 @@
 import { Server as SocketServer } from "socket.io";
-import {
-  IClickableElement,
-  IPlaywrightAction,
-} from "../../interfaces/BrowserService";
 import { Page } from "playwright";
 import { PuppeteerService } from "./PuppeteerService";
-import { ActionResponse } from "../../../types/action.types";
+import { ActionRequest, ActionResponse } from "../../../types/action.types";
+import { getCoordinate } from "../../../utils/historyManager";
 
 export class PuppeteerActions {
   private static io: SocketServer;
@@ -18,7 +15,7 @@ export class PuppeteerActions {
 
   static async click(
     page: Page,
-    action: IPlaywrightAction,
+    action: ActionRequest,
   ): Promise<ActionResponse> {
     if (!action || !action.coordinate) {
       return {
@@ -26,38 +23,16 @@ export class PuppeteerActions {
         message: "Coordinates are required for click action",
       };
     }
-
-    const res = await page.evaluate((action) => {
-      function checkIfIntendedElement(
-        collectedElement: Element,
-        actualElement: IClickableElement,
-      ) {
-        const randomAttribute = Object.keys(actualElement.attributes)[
-          Math.floor(
-            Math.random() * Object.keys(actualElement.attributes).length,
-          )
-        ];
-        return (
-          collectedElement.tagName?.toLowerCase() ===
-            actualElement.tagName?.toLowerCase() &&
-          collectedElement?.textContent === actualElement?.text &&
-          actualElement.attributes[randomAttribute]?.toLowerCase() ===
-            collectedElement.getAttribute(randomAttribute)?.toLowerCase()
-        );
-      }
-
+    const coordinate = getCoordinate(action.coordinate);
+    const res = await page.evaluate((coordinate) => {
       try {
         const element = document.elementFromPoint(
-          action!.coordinate!.x,
-          action!.coordinate!.y,
+          coordinate.x,
+          coordinate.y,
         ) as Element;
         const { top } = element.getBoundingClientRect();
-        const isValidElement = checkIfIntendedElement(
-          element,
-          action!.element as IClickableElement,
-        );
+
         console.log("==========", element.tagName);
-        console.log("============= valid element? ", isValidElement);
 
         if (top > window.innerHeight || top < window.scrollY) {
           element.scrollIntoView({ behavior: "smooth" });
@@ -83,7 +58,7 @@ export class PuppeteerActions {
             "Element not available on the visible viewport. Please check if the element is visible in the current viewport otherwise scroll the page to make the element visible in the viewport",
         };
       }
-    }, action);
+    }, coordinate);
     if (!res.isSuccess) {
       return {
         status: res.isSuccess ? "success" : "error",
@@ -92,8 +67,8 @@ export class PuppeteerActions {
     }
 
     try {
-      await page.mouse.move(action.coordinate.x, action.coordinate.y);
-      await page.mouse.click(action.coordinate.x, action.coordinate.y, {
+      await page.mouse.move(coordinate.x, coordinate.y);
+      await page.mouse.click(coordinate.x, coordinate.y, {
         button: "left",
         clickCount: 1,
       });
@@ -117,18 +92,21 @@ export class PuppeteerActions {
     }
   }
 
-  static async type(page: Page, action: IPlaywrightAction): Promise<any> {
+  static async type(page: Page, action: ActionRequest): Promise<any> {
     if (!action) {
       throw new Error("Text is required for type action");
     }
-
-    const isElementFocused = await page.evaluate((action) => {
-      const el = document.elementFromPoint(
-        action!.coordinate!.x,
-        action!.coordinate!.y,
-      );
+    if (!action.coordinate) {
+      return {
+        status: "error",
+        message: "Coordinates are required for type action",
+      };
+    }
+    const coordinate = getCoordinate(action.coordinate as string);
+    const isElementFocused = await page.evaluate((coordinate) => {
+      const el = document.elementFromPoint(coordinate!.x, coordinate!.y);
       return el === document.activeElement;
-    }, action);
+    }, coordinate);
     if (isElementFocused) {
       await page.keyboard.type(action!.text as string);
       return {
@@ -174,20 +152,18 @@ export class PuppeteerActions {
 
   static async keyPress(
     page: Page,
-    action: IPlaywrightAction,
+    action: ActionRequest,
   ): Promise<ActionResponse> {
     if (!action.text)
       return {
         status: "error",
         message: "Text is required for keypress action",
       };
-    const isFocused = await page.evaluate((action) => {
-      const el = document.elementFromPoint(
-        action!.coordinate!.x,
-        action!.coordinate!.y,
-      );
+    const coordinate = getCoordinate(action.coordinate as string);
+    const isFocused = await page.evaluate((coordinate) => {
+      const el = document.elementFromPoint(coordinate!.x, coordinate!.y);
       return el === document.activeElement;
-    }, action);
+    }, coordinate);
     if (isFocused) {
       let newKey = action.text;
       if (action.text.includes("control")) {

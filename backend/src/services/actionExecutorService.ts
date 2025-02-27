@@ -73,7 +73,7 @@ class ActionExecutorService {
       }
 
       // Route action through the selected service
-      return (await service.performAction(request.action, {
+      return (await service.performAction(request, {
         url: request.url,
         x: request.coordinate
           ? parseInt(request.coordinate.split(",")[0])

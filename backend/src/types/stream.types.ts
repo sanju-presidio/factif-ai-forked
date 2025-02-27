@@ -1,13 +1,12 @@
 import { Server as SocketServer } from "socket.io";
-import { ActionResponse } from "./action.types";
-import { IPlaywrightAction } from "../services/interfaces/BrowserService";
+import { ActionRequest, ActionResponse } from "./action.types";
 
 export interface StreamingService {
   initialize(url: string): Promise<ActionResponse>;
   startScreenshotStream(interval: number): void;
   stopScreenshotStream(): void;
   performAction(
-    action: string | IPlaywrightAction,
+    action: string | ActionRequest,
     params?: any,
   ): Promise<ActionResponse | string>;
   cleanup(): Promise<void>;
