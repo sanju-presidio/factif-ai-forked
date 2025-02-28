@@ -8,7 +8,7 @@ export class ChatController {
   static async handleChatMessage(req: Request, res: Response): Promise<void> {
     try {
       // Get data from request body
-      const { message, imageData, history, omniParserResult } = req.body;
+      const { message, history, omniParserResult } = req.body;
 
       // Get remaining params from query string
       const folderPath = req.query.folderPath as string;
