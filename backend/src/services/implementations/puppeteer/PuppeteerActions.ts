@@ -144,20 +144,18 @@ export class PuppeteerActions {
     page: Page,
     action: ActionRequest,
   ): Promise<ActionResponse> {
-    if (!action.text)
+    if (!action.key)
       return {
         status: "error",
-        message: "Text is required for keypress action",
+        message: "key and coordinate are required for keypress action",
       };
-    const coordinate = getCoordinate(action.coordinate as string);
-    const isFocused = await page.evaluate((coordinate) => {
-      const el = document.elementFromPoint(coordinate!.x, coordinate!.y);
-      return el === document.activeElement;
-    }, coordinate);
+    const isFocused = await page.evaluate(() => {
+      return document.activeElement;
+    });
     if (isFocused) {
-      let newKey = action.text;
-      if (action.text.includes("control")) {
-        newKey = action.text.toLowerCase().replace("control", "ControlOrMeta");
+      let newKey = action.key;
+      if (action.key.toLowerCase().includes("control")) {
+        newKey = action.key.toLowerCase().replace("control", "ControlOrMeta");
       }
       await page.keyboard.press(newKey, { delay: 10 });
       return {
