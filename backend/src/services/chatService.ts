@@ -9,6 +9,7 @@ import { AnthropicProvider } from "./llm/AnthropicProvider";
 import { OpenAIProvider } from "./llm/OpenAIProvider";
 import { GeminiProvider } from "./llm/GeminiProvider";
 import { trimHistory } from "../utils/historyManager";
+import { IProcessedScreenshot } from "./interfaces/BrowserService";
 
 export class ChatService {
   private static provider: LLMProvider;
@@ -39,7 +40,7 @@ export class ChatService {
     res: Response,
     message: string,
     history: ChatMessage[] = [],
-    imageData?: string,
+    imageData: IProcessedScreenshot,
     source?: StreamingSource,
     omniParserResult?: OmniParserResult,
   ): Promise<void> {

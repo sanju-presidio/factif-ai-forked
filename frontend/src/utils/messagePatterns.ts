@@ -47,61 +47,63 @@ export class MessagePatterns {
     completeTask:
       /<complete_task>[\s\n]*<result>([\s\S]*?)<\/result>(?:[\s\n]*<command>(.*?)<\/command>)?[\s\n]*<\/complete_task>/s,
     performAction:
-      /<perform_action>[\s\S]*?<action>(.*?)<\/action>(?:[\s\S]*?<url>(.*?)<\/url>)?(?:[\s\S]*?<coordinate>(.*?)<\/coordinate>)?(?:[\s\S]*?<text>(.*?)<\/text>)?(?:[\s\S]*?<key>(.*?)<\/key>)?[\s\S]*?<\/perform_action>/s,
+      /<perform_action>[\s\S]*?<action>(.*?)<\/action>(?:[\s\S]*?<url>(.*?)<\/url>)?(?:[\s\S]*?<coordinate>(.*?)<\/coordinate>)?(?:[\s\S]*?<text>(.*?)<\/text>)?(?:[\s\S]*?<key>(.*?)<\/key>)?(?:[\s\S]*?<about_this_action>(.*?)<\/about_this_action>)?(?:[\s\S]*?<marker_number>(.*?)<\/marker_number>)?[\s\S]*?<\/perform_action>/s,
     actionResult:
       /<perform_action_result>[\s\S]*?<action_status>(success|error)<\/action_status>[\s\S]*?<action_message>(.*?)<\/action_message>(?:[\s\S]*?<screenshot>(.*?)<\/screenshot>)?(?:[\s\S]*?<omni_parser>(.*?)<\/omni_parser>)?[\s\S]*?<\/perform_action_result>/s,
   };
 
   static parseMessage(text: string): MessagePart[] {
     const parts: MessagePart[] = [];
-    
+
     // Define all possible tag pairs with their closing tags
     const tagPairs = [
       {
-        open: '<ask_followup_question>',
-        close: '</ask_followup_question>',
-        processor: this.processFollowupQuestion.bind(this)
+        open: "<ask_followup_question>",
+        close: "</ask_followup_question>",
+        processor: this.processFollowupQuestion.bind(this),
       },
       {
-        open: '<complete_task>',
-        close: '</complete_task>',
-        processor: this.processCompleteTaskMatch.bind(this)
+        open: "<complete_task>",
+        close: "</complete_task>",
+        processor: this.processCompleteTaskMatch.bind(this),
       },
       {
-        open: '<perform_action>',
-        close: '</perform_action>',
-        processor: this.performActionMatch.bind(this)
+        open: "<perform_action>",
+        close: "</perform_action>",
+        processor: this.performActionMatch.bind(this),
       },
       {
-        open: '<perform_action_result>',
-        close: '</perform_action_result>',
-        processor: this.performActionResultMatch.bind(this)
-      }
+        open: "<perform_action_result>",
+        close: "</perform_action_result>",
+        processor: this.performActionResultMatch.bind(this),
+      },
     ];
 
     let remainingText = text;
-    
+
     while (remainingText.length > 0) {
       // Find the first occurrence of any opening tag
-      const tagStarts = tagPairs.map(pair => ({
-        pair,
-        index: remainingText.indexOf(pair.open)
-      })).filter(t => t.index !== -1);
+      const tagStarts = tagPairs
+        .map((pair) => ({
+          pair,
+          index: remainingText.indexOf(pair.open),
+        }))
+        .filter((t) => t.index !== -1);
 
       if (tagStarts.length === 0) {
         // No more tags found, add remaining text if any
         if (remainingText.trim()) {
           parts.push({
             type: "text",
-            content: remainingText.trim()
+            content: remainingText.trim(),
           });
         }
         break;
       }
 
       // Get the earliest tag
-      const earliestTag = tagStarts.reduce((min, curr) => 
-        curr.index < min.index ? curr : min
+      const earliestTag = tagStarts.reduce((min, curr) =>
+        curr.index < min.index ? curr : min,
       );
 
       // Add any text before the tag
@@ -109,30 +111,35 @@ export class MessagePatterns {
       if (preText) {
         parts.push({
           type: "text",
-          content: preText
+          content: preText,
         });
       }
 
       // Find the matching closing tag
       const closeIndex = remainingText.indexOf(
         earliestTag.pair.close,
-        earliestTag.index + earliestTag.pair.open.length
+        earliestTag.index + earliestTag.pair.open.length,
       );
 
       if (closeIndex === -1) {
         // No closing tag found, treat the opening tag as text
         parts.push({
           type: "text",
-          content: remainingText.slice(earliestTag.index, earliestTag.index + earliestTag.pair.open.length)
+          content: remainingText.slice(
+            earliestTag.index,
+            earliestTag.index + earliestTag.pair.open.length,
+          ),
         });
-        remainingText = remainingText.slice(earliestTag.index + earliestTag.pair.open.length);
+        remainingText = remainingText.slice(
+          earliestTag.index + earliestTag.pair.open.length,
+        );
         continue;
       }
 
       // Extract the full tag content
       const fullTag = remainingText.slice(
         earliestTag.index,
-        closeIndex + earliestTag.pair.close.length
+        closeIndex + earliestTag.pair.close.length,
       );
 
       // Process the tag
@@ -142,7 +149,9 @@ export class MessagePatterns {
       }
 
       // Move past this tag
-      remainingText = remainingText.slice(closeIndex + earliestTag.pair.close.length);
+      remainingText = remainingText.slice(
+        closeIndex + earliestTag.pair.close.length,
+      );
     }
 
     return parts;
@@ -182,7 +191,9 @@ export class MessagePatterns {
           status: resultMatch[1] as "success" | "error",
           message: resultMatch[2],
           ...(resultMatch[3] && { screenshot: resultMatch[3] }),
-          ...(resultMatch[4] && { omniParserResult: JSON.parse(resultMatch[4]) }),
+          ...(resultMatch[4] && {
+            omniParserResult: JSON.parse(resultMatch[4]),
+          }),
         } as ActionResult,
       };
     }

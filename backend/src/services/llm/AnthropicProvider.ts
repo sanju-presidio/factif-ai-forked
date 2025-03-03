@@ -10,6 +10,11 @@ import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
 import fs from "fs";
 import path from "path";
+import {
+  IClickableElement,
+  IProcessedScreenshot,
+} from "../interfaces/BrowserService";
+import { convertElementsToInput } from "../../utils/prompt.util";
 
 export class AnthropicProvider implements LLMProvider {
   private logMessageRequest(messageRequest: any) {
@@ -53,7 +58,7 @@ export class AnthropicProvider implements LLMProvider {
   private formatMessagesWithHistory(
     currentMessage: string,
     history: ChatMessage[],
-    imageData?: string,
+    imageData?: IProcessedScreenshot,
     source?: StreamingSource,
   ): { role: "user" | "assistant"; content: string | any[] }[] {
     const formattedMessages: {
@@ -62,7 +67,7 @@ export class AnthropicProvider implements LLMProvider {
     }[] = [
       {
         role: "user",
-        content: SYSTEM_PROMPT(source),
+        content: SYSTEM_PROMPT(source, false, imageData),
       },
       {
         role: "assistant",
@@ -85,14 +90,29 @@ export class AnthropicProvider implements LLMProvider {
         role: "user",
         content: [
           { type: "text", text: currentMessage },
-          {
-            type: "image",
-            source: {
-              type: "base64",
-              media_type: "image/jpeg",
-              data: imageData,
-            },
-          },
+          ...(imageData.image.length > 0
+            ? [
+                {
+                  type: "image",
+                  source: {
+                    type: "base64",
+                    media_type: "image/png",
+                    data: imageData.image.replace(
+                      /^data:image\/png;base64,/,
+                      "",
+                    ),
+                  },
+                },
+              ]
+            : []),
+          ...(imageData.inference.length > 0
+            ? [
+                {
+                  type: "text",
+                  text: this.addElementsList(imageData.inference),
+                },
+              ]
+            : []),
         ],
       });
     } else {
@@ -169,7 +189,7 @@ export class AnthropicProvider implements LLMProvider {
     message: string,
     history: ChatMessage[] = [],
     source?: StreamingSource,
-    imageData?: string,
+    imageData?: IProcessedScreenshot,
     omniParserResult?: OmniParserResult,
     retryCount: number = config.retryAttemptCount,
   ): Promise<void> {
@@ -203,7 +223,7 @@ export class AnthropicProvider implements LLMProvider {
     message: string,
     history: ChatMessage[] = [],
     source?: StreamingSource,
-    imageData?: string,
+    imageData?: IProcessedScreenshot,
     omniParserResult?: OmniParserResult,
   ) {
     console.log("Processing message with history length:", history.length);
@@ -217,7 +237,7 @@ export class AnthropicProvider implements LLMProvider {
         imageData,
         source,
       );
-      // If omni parser is enabled and we have results, add them to the last user message
+      // If omni parser is enabled, and we have results, add them to the last user message
       if (config.omniParser.enabled && omniParserResult) {
         this.addOmniParserResults(
           formattedMessage,
@@ -237,6 +257,7 @@ export class AnthropicProvider implements LLMProvider {
       await this.processStreamResponse(stream, res);
       return true;
     } catch (error) {
+      console.error("Error in AnthropicProvider:", error);
       this.sendStreamResponse(res, {
         message: "Error processing message re-tyring",
         timestamp: Date.now(),
@@ -245,5 +266,9 @@ export class AnthropicProvider implements LLMProvider {
 
       return false;
     }
+  }
+
+  addElementsList(elements: IClickableElement[]) {
+    return `## Elements List:\n ${convertElementsToInput(elements)}`;
   }
 }
