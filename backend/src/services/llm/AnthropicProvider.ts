@@ -14,9 +14,10 @@ import {
 } from "../../utils/common.util";
 import {
   IClickableElement,
-  IProcessedScreenshot,
+  IProcessedScreenshot, OmniParserResponse
 } from "../interfaces/BrowserService";
 import { convertElementsToInput } from "../../utils/prompt.util";
+import { getOmniParserSystemPrompt } from "../../prompts/omni-parser.prompt";
 
 export class AnthropicProvider implements LLMProvider {
   private client: Anthropic | AnthropicBedrock;
@@ -43,7 +44,8 @@ export class AnthropicProvider implements LLMProvider {
     currentMessage: string,
     history: ChatMessage[],
     imageData?: IProcessedScreenshot,
-    source?: StreamingSource
+    source?: StreamingSource,
+    omniParserResponse?: OmniParserResponse | null,
   ): { role: "user" | "assistant"; content: string | any[] }[] {
     const formattedMessages: {
       role: "user" | "assistant";
@@ -51,7 +53,10 @@ export class AnthropicProvider implements LLMProvider {
     }[] = [
       {
         role: "user",
-        content: SYSTEM_PROMPT(source, false, imageData),
+        content: omniParserResponse ? getOmniParserSystemPrompt(
+          source as string,
+          this.addOmniParserResults(omniParserResponse),
+        ): SYSTEM_PROMPT(source, false, imageData),
       },
       {
         role: "assistant",
@@ -227,6 +232,22 @@ export class AnthropicProvider implements LLMProvider {
 
       return false;
     }
+  }
+
+  addOmniParserResults(omniParserResult: OmniParserResponse): string {
+    const response = omniParserResult.elements
+      .map((element, index) => {
+        return `
+        <element>
+          <maker_number>${index}</marker_number>
+          <coordinates>${element.coordinates}</coordinates>
+          <content>${element.content}</content>
+          <is_intractable>${element.interactivity}</is_intractable>
+        </element>`;
+      })
+      .join("\n\n");
+    console.log(response);
+    return response;
   }
 
   addElementsList(elements: IClickableElement[]) {

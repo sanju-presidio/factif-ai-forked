@@ -75,13 +75,13 @@ export class StreamingController {
           screenshot.replace(/^data:image\/\w+;base64,/, ""),
           "base64",
         );
-        const omniParserResults =
-          await omniParserService.processImage(imageBuffer);
+        // const omniParserResults =
+        //   await omniParserService.processImage(imageBuffer);
 
-        socket.emit("screenshot-snapshot", {
-          image: screenshot,
-          omniParserResults,
-        });
+        // socket.emit("screenshot-snapshot", {
+        //   image: screenshot,
+        //   omniParserResults,
+        // });
       }
     } catch (error: any) {
       socket.emit("browser-error", {

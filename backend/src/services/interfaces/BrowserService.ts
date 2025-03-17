@@ -18,6 +18,26 @@ export interface BrowserService {
   close(): Promise<ActionResult>;
 }
 
+
+export interface OmniParserElement {
+  type: string;
+  bbox: number[];
+  interactivity: boolean;
+  content: string;
+  source: string;
+}
+
+export interface OmniParserProcessedElement {
+  interactivity: boolean;
+  content: string;
+  coordinates: string;
+}
+
+export interface OmniParserResponse {
+  processedImage: string;
+  elements: OmniParserProcessedElement[];
+}
+
 export type ActionType =
   | "click"
   | "type"
