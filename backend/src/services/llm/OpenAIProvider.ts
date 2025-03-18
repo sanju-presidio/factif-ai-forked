@@ -7,12 +7,10 @@ import { SYSTEM_PROMPT } from "../../prompts/systemPrompts.prompt";
 import { ChatMessage } from "../../types/chat.types";
 import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
-import { IClickableElement, IProcessedScreenshot, OmniParserResponse } from "../interfaces/BrowserService";
+import { IProcessedScreenshot, OmniParserResponse } from "../interfaces/BrowserService";
 import fs from "fs";
 import path from "path";
-import { convertElementsToInput } from "../../utils/prompt.util";
-import { getOmniParserSystemPrompt } from "../../prompts/omni-parser.prompt";
-import { addElementsList, addOmniParserResults } from "../../utils/common.util";
+import { addElementsList } from "../../utils/common.util";
 
 export class OpenAIProvider implements LLMProvider {
   private client: OpenAI | AzureOpenAI;
@@ -64,10 +62,7 @@ export class OpenAIProvider implements LLMProvider {
     imageData?: IProcessedScreenshot,
     omniParserResult?: OmniParserResponse,
   ): ChatCompletionMessageParam[] {
-    const systemPrompt = omniParserResult ? getOmniParserSystemPrompt(
-      source as string,
-      addOmniParserResults(omniParserResult)
-    ) : SYSTEM_PROMPT(source, false, imageData)
+    const systemPrompt = SYSTEM_PROMPT(source, omniParserResult, imageData)
 
     const formattedMessages: ChatCompletionMessageParam[] = [
       {

@@ -9,15 +9,11 @@ import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
 import {
   addElementsList,
-  addOmniParserResults,
   logMessageRequest
 } from "../../utils/common.util";
 import {
-  IClickableElement,
   IProcessedScreenshot, OmniParserResponse
 } from "../interfaces/BrowserService";
-import { convertElementsToInput } from "../../utils/prompt.util";
-import { getOmniParserSystemPrompt } from "../../prompts/omni-parser.prompt";
 
 export class AnthropicProvider implements LLMProvider {
   private client: Anthropic | AnthropicBedrock;
@@ -53,10 +49,7 @@ export class AnthropicProvider implements LLMProvider {
     }[] = [
       {
         role: "user",
-        content: omniParserResponse ? getOmniParserSystemPrompt(
-          source as string,
-          addOmniParserResults(omniParserResponse)
-        ) : SYSTEM_PROMPT(source, false, imageData)
+        content: SYSTEM_PROMPT(source, omniParserResponse, imageData)
       },
       {
         role: "assistant",
@@ -197,7 +190,6 @@ export class AnthropicProvider implements LLMProvider {
     omniParserResult?: OmniParserResponse | null
   ) {
     console.log("Processing message with history length:", history.length);
-    const USER_ROLE = "user";
     try {
       const modelId = this.getModelId();
       // Format messages with history and image if present

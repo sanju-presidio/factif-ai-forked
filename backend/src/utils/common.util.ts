@@ -1,6 +1,5 @@
 import path from "path";
 import fs from "fs";
-import { OmniParserResult } from "../types/action.types";
 import { StreamingSource } from "../types/stream.types";
 import { PuppeteerActions } from "../services/implementations/puppeteer/PuppeteerActions";
 import { DockerCommands } from "../services/implementations/docker/DockerCommands";
@@ -60,7 +59,7 @@ export async function getCurrentUrlBasedOnSource(source: StreamingSource) {
 }
 
 export const addOmniParserResults = (omniParserResult: OmniParserResponse): string => {
-  const response = omniParserResult.elements
+  return omniParserResult.elements
     .map((element, index) => {
       return `
         <element>
@@ -71,8 +70,6 @@ export const addOmniParserResults = (omniParserResult: OmniParserResponse): stri
         </element>`;
     })
     .join("\n\n");
-  console.log(response);
-  return response;
 };
 
 export const addElementsList = (elements: IClickableElement[]) => {

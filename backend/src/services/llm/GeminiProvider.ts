@@ -12,8 +12,7 @@ import { ChatMessage } from "../../types/chat.types";
 import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
 import { IProcessedScreenshot, OmniParserResponse } from "../interfaces/BrowserService";
-import { getOmniParserSystemPrompt } from "../../prompts/omni-parser.prompt";
-import { addElementsList, addOmniParserResults } from "../../utils/common.util";
+import { addElementsList } from "../../utils/common.util";
 
 export class GeminiProvider implements LLMProvider {
   private client: GoogleGenerativeAI;
@@ -68,7 +67,7 @@ export class GeminiProvider implements LLMProvider {
     source?: StreamingSource,
     omniParserResult?: OmniParserResponse
   ) {
-    const systemPrompt = SYSTEM_PROMPT(source, !!omniParserResult) || "";
+    const systemPrompt = SYSTEM_PROMPT(source, omniParserResult) || "";
 
     // Add omni parser results if available and enabled
     const finalMessage =
@@ -148,10 +147,7 @@ export class GeminiProvider implements LLMProvider {
       );
       if (imageData && (!config.omniParser.enabled || !omniParserResponse)) {
         // Only use vision model if omni parser is not enabled
-        const systemPrompt = omniParserResponse ? getOmniParserSystemPrompt(
-          source as string,
-          addOmniParserResults(omniParserResponse)
-        ) : SYSTEM_PROMPT(source, false, imageData);
+        const systemPrompt = SYSTEM_PROMPT(source, omniParserResponse, imageData);
         const result = await this.visionModel.generateContent([
           { text: systemPrompt },
           ...(imageData.image.length > 0
