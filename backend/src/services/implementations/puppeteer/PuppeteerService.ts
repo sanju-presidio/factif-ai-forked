@@ -113,7 +113,11 @@ export class PuppeteerService extends BaseStreamingService {
             message: "Browser closed successfully" 
           };
         case "click":
-          return await PuppeteerActions.click(PuppeteerService.page, action);
+          const response = await PuppeteerActions.click(PuppeteerService.page, action);
+          await PuppeteerService.page.waitForLoadState("domcontentloaded", {
+            timeout: 20_000,
+          });
+          return response;
         case "type":
           return await PuppeteerActions.type(PuppeteerService.page, action);
         case "scroll_up":
@@ -317,7 +321,7 @@ export class PuppeteerService extends BaseStreamingService {
           "Browser is not launched. Please launch the browser first."
         );
       }
-      
+
       // Get context safely
       const contexts = PuppeteerService.browser.contexts();
       if (!contexts || contexts.length === 0) {
@@ -337,8 +341,7 @@ export class PuppeteerService extends BaseStreamingService {
       // Take screenshot with error handling
       try {
         const buffer = await page.screenshot({ type: "png" });
-        const base64Image = buffer.toString("base64");
-        return base64Image;
+        return buffer.toString("base64");
       } catch (screenshotError) {
         this.emitConsoleLog("error", `Screenshot error: ${screenshotError}`);
         throw screenshotError;
