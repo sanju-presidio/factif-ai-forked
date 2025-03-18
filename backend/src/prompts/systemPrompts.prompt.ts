@@ -1,16 +1,18 @@
 import { StreamingSource } from "../types/stream.types";
 import {
   IClickableElement,
-  IProcessedScreenshot,
+  IProcessedScreenshot, OmniParserResponse
 } from "../services/interfaces/BrowserService";
 import { convertElementsToInput } from "../utils/prompt.util";
+import { addOmniParserResults } from "../utils/common.util";
 
 const BASE_SYSTEM_PROMPT = (
-  isMarkedScreenshotAvailable: boolean,
+  isBrowser: boolean,
+  omniParserResult: OmniParserResponse | null
 ) => `You are factif-ai an AI agent experienced in web and mobile interface usage & testing.
 Make sure you understand the Environment Context. If the source is not provided, assume the default is Docker.
 ${
-  isMarkedScreenshotAvailable
+  isBrowser || omniParserResult
     ? `You will be provided with a marked screenshot where you can see elements that you can interact with and list of elements as element_list in the given format [marker_number]: html element tag details: [availability on the current viewport]. 
 Each mark in the screenshot have one unique number referred as marker_number. You are allowed to interact with marked elements only.`
     : ""
@@ -18,15 +20,21 @@ Each mark in the screenshot have one unique number referred as marker_number. Yo
 Scroll to explore more elements on the page if scroll is possible. Do not hallucinate.
 Understand the Task. split the task to steps and execute each step one by one.
 ${
-  isMarkedScreenshotAvailable
-    ? `
-Use element_list & marker_number to have an idea about available elements. Handle alert/confirmation popups if any.
-
+  isBrowser || omniParserResult ? `Use element_list & marker_number to have an idea about available elements. Handle alert/confirmation popups if any.` : ``
+}
+${
+  isBrowser ? `
 example element_list: 
 [0]: <button>Login</button>:[200,300]:[visible in the current viewport] 
 [1]: <input type="text" placeholder="Username">:[125, 400]: [Not available in current viewport. Available on scroll]
 `
-    : ""
+    : omniParserResult ? `
+    <element>
+<maker_number>marker number in the screenshot given</marker_number>
+<coordinates>center coordinate of the element. Use this value to interact with this element</coordinates>
+<content>text content of the element. such as label, description etc. Do not hallucinate on this. assume word by word meaning only</content>
+<is_intractable>boolean value denoting whether you can interact with this element or not</is_intractable>
+</element>` : ""
 }
 IMPORTANT: Before sending ANY response, you MUST verify it follows these rules:
 
@@ -76,7 +84,7 @@ NEVER send a response with multiple tool uses.
       <action>click</action>
       <coordinate>450,300</coordinate>
       <about_this_action>Clicking on the username field</about_this_action>
-      ${isMarkedScreenshotAvailable ? `<marker_number>0<marker_number>` : ""}
+      ${isBrowser || omniParserResult ? `<marker_number>0<marker_number>` : ""}
     </perform_action>
 
 3. Error Prevention
@@ -162,9 +170,9 @@ Parameters:
 - url: (optional) URL for 'launch' action
     * Example: <url>https://example.com</url>
     ${
-      isMarkedScreenshotAvailable
-        ? ``
-        : `
+  isBrowser || omniParserResult
+    ? ``
+    : `
  - coordinate: (optional) X,Y coordinates for click/doubleClick
     * ONLY use coordinates from:
       1. Direct screenshot analysis with clear visual confirmation
@@ -174,7 +182,7 @@ Parameters:
     * For screenshot analysis: Describe element surroundings before identifying coordinates
     * For omni parser: Use provided formulas to calculate center coordinates
     * Example: <coordinate>450,300</coordinate>`
-    }
+}
 - text: (optional) Text to type
     * Example: <text>Hello, world!</text>
 - key: (optional) Key to press
@@ -222,11 +230,11 @@ Usage:
     <perform_action>
       <action>Mandatory if the tool is action. action to perform. NEVER BE EMPTY</action>
       <url>URL to launch the browser at (optional) if action is launch then URL is mandatory</url>
-      <coordinate>${isMarkedScreenshotAvailable ? `coordinate of the element in which the action has to perform. Coordinate will be available on the element list provided. NEVER BE EMPTY` : `x,y coordinates if the tool is click/doubleClick`}</coordinate>
+      <coordinate>${isBrowser || omniParserResult ? `coordinate of the element in which the action has to perform. Coordinate will be available on the element list provided. NEVER BE EMPTY` : `x,y coordinates if the tool is click/doubleClick`}</coordinate>
       <text>provide text to type if the tool is type, key to press if the tool is keypress</text>
       <key>key to press if the tool is keypress</key>
       <about_this_action>any additional information you want to provide</about_this_action>
-      ${isMarkedScreenshotAvailable ? `<marker_number>Mandatory if the tool is action. NEVER BE EMPTY<marker_number>` : ""}
+      ${isBrowser || omniParserResult ? `<marker_number>Mandatory if the tool is action. NEVER BE EMPTY<marker_number>` : ""}
     </perform_action>
 
 ## ask_followup_question
@@ -259,17 +267,19 @@ Important Notes:
 
 const getSystemPrompt = (
   source?: StreamingSource,
-  hasOmniParserResults: boolean = false,
-  imageData?: IProcessedScreenshot,
+  omniParserResult: OmniParserResponse | null = null,
+  imageData?: IProcessedScreenshot
 ): string => {
-  const isMarkedScreenshotAvailable =
-    hasOmniParserResults || source === "chrome-puppeteer";
-  let prompt = BASE_SYSTEM_PROMPT(isMarkedScreenshotAvailable);
+
+  let prompt = BASE_SYSTEM_PROMPT(source === "chrome-puppeteer",
+    omniParserResult
+  );
 
   if (!source) return prompt;
 
   return `${prompt}\n\n# Environment Context\nSource: ${source}
   ${(imageData?.inference as IClickableElement[]).length > 0 ? `element_list: \n${convertElementsToInput(imageData?.inference as IClickableElement[])}\n\n` : ""}
+  ${omniParserResult ? `element_list: \n${addOmniParserResults(omniParserResult)}`: ''}
    To explore more use scroll_down or scroll_up based on your requirement.`;
 };
 

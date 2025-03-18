@@ -16,7 +16,7 @@ import {
   logMessageRequest,
 } from "../../utils/common.util";
 import { getLatestScreenshot } from "../../utils/screenshotUtils";
-import { IProcessedScreenshot } from "../interfaces/BrowserService";
+import { IProcessedScreenshot, OmniParserResponse } from "../interfaces/BrowserService";
 import { PuppeteerService } from "../implementations/puppeteer/PuppeteerService";
 import { 
   exploreModePrompt, 
@@ -170,7 +170,7 @@ export class ExploreModeOpenAIProvider implements LLMProvider {
     type: ExploreActionTypes = ExploreActionTypes.EXPLORE,
     source?: StreamingSource,
     imageData?: IProcessedScreenshot,
-    omniParserResult?: OmniParserResult,
+    omniParserResult?: OmniParserResponse,
     retryCount: number = config.retryAttemptCount
   ): Promise<void> {
     console.log("is image available", !!imageData);
@@ -212,7 +212,7 @@ export class ExploreModeOpenAIProvider implements LLMProvider {
     type: ExploreActionTypes = ExploreActionTypes.EXPLORE,
     source?: StreamingSource,
     imageData?: IProcessedScreenshot,
-    omniParserResult?: OmniParserResult
+    omniParserResult?: OmniParserResponse,
   ): Promise<boolean> {
     try {
       console.log("Processing message with history length:", history.length);

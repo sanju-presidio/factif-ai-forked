@@ -73,7 +73,7 @@ export class StreamingController {
         action: "launch",
         url: "about:blank"
       };
-      
+
       try {
         // This will simply validate the browser is available, or create a new one if not
         await this.streamingService.performAction(
@@ -84,17 +84,13 @@ export class StreamingController {
         console.error("Error ensuring browser is available:", browserError);
         // Continue anyway to try taking a screenshot
       }
-      
+
       // Now attempt to take the screenshot
       const screenshot = await this.streamingService.takeScreenshot();
 
       if (screenshot) {
-        const imageBuffer = Buffer.from(
-          screenshot.replace(/^data:image\/\w+;base64,/, ""),
-          "base64",
-        );
         const omniParserResults =
-          await omniParserService.processImage(imageBuffer);
+          await omniParserService.processImage(screenshot);
 
         socket.emit("screenshot-snapshot", {
           image: screenshot,
