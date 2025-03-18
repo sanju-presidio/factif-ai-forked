@@ -19,16 +19,10 @@
   - **Chat Context Management:** Implemented context management to prevent exceeding LLM token limits on complex websites.
   - **Explore Mode Graph Fix:** Corrected a bug causing incorrect graph rendering in explore mode.
   - **Seamless VNC Mode Switching:** Resolved issues with VNC mode switching, ensuring a smoother user experience.
-  - **Incorrect Timestamp:** The history displays the last accessed time instead of the creation time. This makes it difficult to track the chronological order of conversations.
-  - **Incorrect URL Display:** The URL bar does not always accurately reflect the active URL being displayed in the browser preview.
-  - **Graph Refresh on History Switch:** The graph does not refresh when switching between different entries in the chat history. This results in the graph displaying the information from the previously viewed history item, rather than the currently selected one.
-  - **Real-time Graph Updates:** The graph does not update in real-time. It only updates when the user switches between the browser preview and the chat interface. This delay hinders the user's ability to observe immediate changes in the website structure.
-  - **Missing Screenshots:** Occasionally, the graph renders without an associated screenshot, leading to incomplete visualizations.
 
   **Enhancements:**
 
   - **UX Improvements:** General UX enhancements implemented to improve usability and overall user experience.
-  - **Screenshot on History Load**: Implement the functionality to display a screenshot within the graph when loading a chat history entry. This would provide visual context for past interactions
 
 
 ## 1.2.0
