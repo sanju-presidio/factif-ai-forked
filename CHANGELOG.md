@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.3.0
+
+### Minor Changes
+
+- ### Features
+
+  - **Integrated OmniParser v2:** Delivers enriched, annotated screenshots to the LLM, enabling more informed decision-making for task execution
+  - **Automated Playwright Installation:** Playwright binaries now automatically install after `npm install`, streamlining the setup process.
+  - **Factifai Logo Added:** Improved visual identity with the addition of the Factifai logo.
+
+  **Bug Fixes:**
+
+  - **LLM Context Isolation:** Resolved context contamination between different operating modes, ensuring accurate and isolated responses.
+  - **Chat Context Management:** Implemented context management to prevent exceeding LLM token limits on complex websites.
+  - **Explore Mode Graph Fix:** Corrected a bug causing incorrect graph rendering in explore mode.
+
 ## 1.2.0
 
 ### New Feature: Explore Mode
