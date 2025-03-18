@@ -13,7 +13,7 @@ export class OmniParserService {
   }
 
   async processImage(base64Image: string): Promise<OmniParserResponse | null> {
-    if (!this.enabled) {
+    if (!this.enabled || base64Image.length === 0) {
       return null;
     }
 

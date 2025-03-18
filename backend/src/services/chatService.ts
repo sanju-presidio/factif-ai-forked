@@ -11,7 +11,7 @@ import { ExploreModeOpenAIProvider } from "./llm/ExploreModeOpenAIProvider";
 import { OpenAIProvider } from "./llm/OpenAIProvider";
 import { GeminiProvider } from "./llm/GeminiProvider";
 import { AnthropicProvider } from "./llm/AnthropicProvider";
-import { IProcessedScreenshot } from "./interfaces/BrowserService";
+import { IProcessedScreenshot, OmniParserResponse } from "./interfaces/BrowserService";
 
 export class ChatService {
   private static provider: LLMProvider;
@@ -62,7 +62,7 @@ export class ChatService {
     type: ExploreActionTypes = ExploreActionTypes.EXPLORE,
     imageData: IProcessedScreenshot,
     source?: StreamingSource,
-    omniParserResult?: OmniParserResult
+    omniParserResult?: OmniParserResponse,
   ): Promise<void> {
     // Get the current model based on provider
     const model = (() => {

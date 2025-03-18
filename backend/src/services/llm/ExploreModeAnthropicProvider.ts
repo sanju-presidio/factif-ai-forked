@@ -3,7 +3,6 @@ import Anthropic from "@anthropic-ai/sdk";
 import AnthropicBedrock from "@anthropic-ai/bedrock-sdk";
 import { config } from "../../config";
 import { ExploreActionTypes, Modes, StreamResponse } from "../../types";
-import { OmniParserResult } from "../../types/action.types";
 import { ChatMessage } from "../../types/chat.types";
 import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
@@ -17,12 +16,11 @@ import {
   saveFileAndScreenshot,
 } from "../../utils/conversion-util";
 import {
-  addOmniParserResults,
   getCurrentUrlBasedOnSource,
   logMessageRequest,
 } from "../../utils/common.util";
 import { getLatestScreenshot } from "../../utils/screenshotUtils";
-import { IProcessedScreenshot } from "../interfaces/BrowserService";
+import { IProcessedScreenshot, OmniParserResponse } from "../interfaces/BrowserService";
 import { PuppeteerService } from "../implementations/puppeteer/PuppeteerService";
 
 // Interface for page metadata
@@ -194,7 +192,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     type: ExploreActionTypes = ExploreActionTypes.EXPLORE,
     source?: StreamingSource,
     imageData?: IProcessedScreenshot,
-    omniParserResult?: OmniParserResult,
+    omniParserResult?: OmniParserResponse,
     retryCount: number = config.retryAttemptCount
   ): Promise<void> {
     console.log("is image available", !!imageData);
@@ -249,7 +247,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     type: ExploreActionTypes = ExploreActionTypes.EXPLORE,
     source?: StreamingSource,
     imageData?: IProcessedScreenshot,
-    omniParserResult?: OmniParserResult
+    omniParserResult?: OmniParserResponse,
   ): Promise<boolean> {
     const USER_ROLE = "user";
     try {
@@ -268,10 +266,6 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
         type,
         currentPageUrl
       );
-      // If omni parser is enabled and we have results, add them to the last user message
-      if (config.omniParser.enabled && omniParserResult) {
-        addOmniParserResults(formattedMessage, omniParserResult, USER_ROLE);
-      }
 
       const messageRequest = this.buildMessageRequest(
         modelId,

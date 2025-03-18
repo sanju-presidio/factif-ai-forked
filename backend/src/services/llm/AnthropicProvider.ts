@@ -4,13 +4,13 @@ import AnthropicBedrock from "@anthropic-ai/bedrock-sdk";
 import { config } from "../../config";
 import { ExploreActionTypes, Modes, StreamResponse } from "../../types";
 import { SYSTEM_PROMPT } from "../../prompts/systemPrompts.prompt";
-import { OmniParserResult } from "../../types/action.types";
 import { ChatMessage } from "../../types/chat.types";
 import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
 import {
+  addElementsList,
   addOmniParserResults,
-  logMessageRequest,
+  logMessageRequest
 } from "../../utils/common.util";
 import {
   IClickableElement,
@@ -27,11 +27,11 @@ export class AnthropicProvider implements LLMProvider {
       this.client = new AnthropicBedrock({
         awsRegion: config.llm.anthropic.bedrock.region,
         awsAccessKey: config.llm.anthropic.bedrock.credentials.accessKeyId,
-        awsSecretKey: config.llm.anthropic.bedrock.credentials.secretAccessKey,
+        awsSecretKey: config.llm.anthropic.bedrock.credentials.secretAccessKey
       });
     } else {
       this.client = new Anthropic({
-        apiKey: config.llm.anthropic.apiKey,
+        apiKey: config.llm.anthropic.apiKey
       });
     }
   }
@@ -45,7 +45,7 @@ export class AnthropicProvider implements LLMProvider {
     history: ChatMessage[],
     imageData?: IProcessedScreenshot,
     source?: StreamingSource,
-    omniParserResponse?: OmniParserResponse | null,
+    omniParserResponse?: OmniParserResponse | null
   ): { role: "user" | "assistant"; content: string | any[] }[] {
     const formattedMessages: {
       role: "user" | "assistant";
@@ -55,21 +55,21 @@ export class AnthropicProvider implements LLMProvider {
         role: "user",
         content: omniParserResponse ? getOmniParserSystemPrompt(
           source as string,
-          this.addOmniParserResults(omniParserResponse),
-        ): SYSTEM_PROMPT(source, false, imageData),
+          addOmniParserResults(omniParserResponse)
+        ) : SYSTEM_PROMPT(source, false, imageData)
       },
       {
         role: "assistant",
         content:
-          "I understand. Before each response, I will:\n\n1. Verify only ONE tool use exists\n2. Check no tool XML in markdown\n3. Validate all parameters\n4. Never combine multiple actions\n\nWhat would you like me to do?",
-      },
+          "I understand. Before each response, I will:\n\n1. Verify only ONE tool use exists\n2. Check no tool XML in markdown\n3. Validate all parameters\n4. Never combine multiple actions\n\nWhat would you like me to do?"
+      }
     ];
 
     // Add all history messages
     history.forEach((msg) => {
       formattedMessages.push({
         role: msg.isUser ? "user" : ("assistant" as const),
-        content: msg.text,
+        content: msg.text
       });
     });
 
@@ -82,33 +82,33 @@ export class AnthropicProvider implements LLMProvider {
           { type: "text", text: currentMessage },
           ...(imageData.image.length > 0
             ? [
-                {
-                  type: "image",
-                  source: {
-                    type: "base64",
-                    media_type: "image/png",
-                    data: imageData.image.replace(
-                      /^data:image\/png;base64,/,
-                      ""
-                    ),
-                  },
-                },
-              ]
+              {
+                type: "image",
+                source: {
+                  type: "base64",
+                  media_type: "image/png",
+                  data: imageData.image.replace(
+                    /^data:image\/png;base64,/,
+                    ""
+                  )
+                }
+              }
+            ]
             : []),
           ...(imageData.inference.length > 0
             ? [
-                {
-                  type: "text",
-                  text: this.addElementsList(imageData.inference),
-                },
-              ]
-            : []),
-        ],
+              {
+                type: "text",
+                text: addElementsList(imageData.inference)
+              }
+            ]
+            : [])
+        ]
       });
     } else {
       formattedMessages.push({
         role: "user",
-        content: currentMessage,
+        content: currentMessage
       });
     }
 
@@ -128,7 +128,7 @@ export class AnthropicProvider implements LLMProvider {
       model: modelId,
       max_tokens: maxTokens,
       messages,
-      stream: true as const,
+      stream: true as const
     };
   }
 
@@ -137,14 +137,14 @@ export class AnthropicProvider implements LLMProvider {
       if (chunk.type === "content_block_delta" && chunk.delta?.text) {
         this.sendStreamResponse(res, {
           message: chunk.delta.text,
-          timestamp: Date.now(),
+          timestamp: Date.now()
         });
       }
     }
     this.sendStreamResponse(res, {
       message: "",
       timestamp: Date.now(),
-      isComplete: true,
+      isComplete: true
     });
   }
 
@@ -156,7 +156,7 @@ export class AnthropicProvider implements LLMProvider {
     type: ExploreActionTypes = ExploreActionTypes.EXPLORE,
     source?: StreamingSource,
     imageData?: IProcessedScreenshot,
-    omniParserResult?: OmniParserResult,
+    omniParserResult?: OmniParserResponse,
     retryCount: number = config.retryAttemptCount
   ): Promise<void> {
     const retryArray = new Array(retryCount).fill(0);
@@ -181,7 +181,7 @@ export class AnthropicProvider implements LLMProvider {
       this.sendStreamResponse(res, {
         message: "Error processing message. Please try again later.",
         timestamp: Date.now(),
-        isError: true,
+        isError: true
       });
     }
   }
@@ -194,7 +194,7 @@ export class AnthropicProvider implements LLMProvider {
     _type: ExploreActionTypes = ExploreActionTypes.ACTION,
     source?: StreamingSource,
     imageData?: IProcessedScreenshot,
-    omniParserResult?: OmniParserResult
+    omniParserResult?: OmniParserResponse | null
   ) {
     console.log("Processing message with history length:", history.length);
     const USER_ROLE = "user";
@@ -205,13 +205,9 @@ export class AnthropicProvider implements LLMProvider {
         message,
         history,
         imageData,
-        source
+        source,
+        omniParserResult || null
       );
-      // If omni parser is enabled, and we have results, add them to the last user message
-      if (config.omniParser.enabled && omniParserResult) {
-        addOmniParserResults(formattedMessage, omniParserResult, USER_ROLE);
-      }
-
       const messageRequest = this.buildMessageRequest(
         modelId,
         formattedMessage
@@ -227,30 +223,12 @@ export class AnthropicProvider implements LLMProvider {
       this.sendStreamResponse(res, {
         message: "Error processing message re-trying",
         timestamp: Date.now(),
-        isError: false,
+        isError: false
       });
 
       return false;
     }
   }
 
-  addOmniParserResults(omniParserResult: OmniParserResponse): string {
-    const response = omniParserResult.elements
-      .map((element, index) => {
-        return `
-        <element>
-          <maker_number>${index}</marker_number>
-          <coordinates>${element.coordinates}</coordinates>
-          <content>${element.content}</content>
-          <is_intractable>${element.interactivity}</is_intractable>
-        </element>`;
-      })
-      .join("\n\n");
-    console.log(response);
-    return response;
-  }
 
-  addElementsList(elements: IClickableElement[]) {
-    return `## Elements List:\n ${convertElementsToInput(elements)}`;
-  }
 }

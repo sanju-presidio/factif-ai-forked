@@ -3,16 +3,17 @@ import {
   GenerativeModel,
   GoogleGenerativeAI,
   HarmBlockThreshold,
-  HarmCategory,
+  HarmCategory
 } from "@google/generative-ai";
 import { config } from "../../config";
 import { ExploreActionTypes, Modes, StreamResponse } from "../../types";
 import { SYSTEM_PROMPT } from "../../prompts/systemPrompts.prompt";
-import { OmniParserResult } from "../../types/action.types";
 import { ChatMessage } from "../../types/chat.types";
 import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
-import { IProcessedScreenshot } from "../interfaces/BrowserService";
+import { IProcessedScreenshot, OmniParserResponse } from "../interfaces/BrowserService";
+import { getOmniParserSystemPrompt } from "../../prompts/omni-parser.prompt";
+import { addElementsList, addOmniParserResults } from "../../utils/common.util";
 
 export class GeminiProvider implements LLMProvider {
   private client: GoogleGenerativeAI;
@@ -22,20 +23,20 @@ export class GeminiProvider implements LLMProvider {
   safetySettings = [
     {
       category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-      threshold: HarmBlockThreshold.BLOCK_NONE,
+      threshold: HarmBlockThreshold.BLOCK_NONE
     },
     {
       category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-      threshold: HarmBlockThreshold.BLOCK_NONE,
+      threshold: HarmBlockThreshold.BLOCK_NONE
     },
     {
       category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-      threshold: HarmBlockThreshold.BLOCK_NONE,
+      threshold: HarmBlockThreshold.BLOCK_NONE
     },
     {
       category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-      threshold: HarmBlockThreshold.BLOCK_NONE,
-    },
+      threshold: HarmBlockThreshold.BLOCK_NONE
+    }
   ];
   // {
   //   category: HarmCategory.HARM_CATEGORY_UNSPECIFIED,
@@ -49,11 +50,11 @@ export class GeminiProvider implements LLMProvider {
     this.client = new GoogleGenerativeAI(config.llm.gemini.apiKey);
     this.chatModel = this.client.getGenerativeModel({
       model: config.llm.gemini.model,
-      safetySettings: this.safetySettings,
+      safetySettings: this.safetySettings
     });
     this.visionModel = this.client.getGenerativeModel({
       model: config.llm.gemini.visionModel,
-      safetySettings: this.safetySettings,
+      safetySettings: this.safetySettings
     });
   }
 
@@ -65,7 +66,7 @@ export class GeminiProvider implements LLMProvider {
     currentMessage: string,
     history: ChatMessage[],
     source?: StreamingSource,
-    omniParserResult?: OmniParserResult,
+    omniParserResult?: OmniParserResponse
   ) {
     const systemPrompt = SYSTEM_PROMPT(source, !!omniParserResult) || "";
 
@@ -80,20 +81,20 @@ export class GeminiProvider implements LLMProvider {
         role: "assistant",
         parts: [
           {
-            text: "I understand. Before each response, I will:\n\n1. Verify only ONE tool use exists\n2. Check no tool XML in markdown\n3. Validate all parameters\n4. Never combine multiple actions\n\nWhat would you like me to do?",
-          },
-        ],
+            text: "I understand. Before each response, I will:\n\n1. Verify only ONE tool use exists\n2. Check no tool XML in markdown\n3. Validate all parameters\n4. Never combine multiple actions\n\nWhat would you like me to do?"
+          }
+        ]
       },
       ...history.map((msg) => ({
         role: msg.isUser ? "user" : "assistant",
-        parts: [{ text: msg.text }],
-      })),
+        parts: [{ text: msg.text }]
+      }))
     ];
 
     return {
       systemPrompt,
       history: formattedHistory,
-      currentMessage: finalMessage,
+      currentMessage: finalMessage
     };
   }
 
@@ -105,8 +106,8 @@ export class GeminiProvider implements LLMProvider {
     _type: ExploreActionTypes = ExploreActionTypes.EXPLORE,
     source?: StreamingSource,
     imageData?: IProcessedScreenshot,
-    omniParserResult?: OmniParserResult,
-    retryCount: number = config.retryAttemptCount,
+    omniParserResult?: OmniParserResponse,
+    retryCount: number = config.retryAttemptCount
   ): Promise<void> {
     const retryArray = new Array(retryCount).fill(0);
     let isRetrySuccessful = false;
@@ -117,7 +118,7 @@ export class GeminiProvider implements LLMProvider {
         history,
         source,
         imageData,
-        omniParserResult,
+        omniParserResult
       );
       if (isRetrySuccessful) {
         return;
@@ -127,7 +128,7 @@ export class GeminiProvider implements LLMProvider {
       this.sendStreamResponse(res, {
         message: "Error processing message. Please try again later.",
         timestamp: Date.now(),
-        isError: true,
+        isError: true
       });
     }
   }
@@ -138,63 +139,73 @@ export class GeminiProvider implements LLMProvider {
     history: ChatMessage[] = [],
     source?: StreamingSource,
     imageData?: IProcessedScreenshot,
-    omniParserResult?: OmniParserResult,
+    omniParserResponse?: OmniParserResponse
   ): Promise<boolean> {
     try {
       console.log(
         "Stream - Processing message with history length:",
-        history.length,
+        history.length
       );
-      if (imageData && (!config.omniParser.enabled || !omniParserResult)) {
+      if (imageData && (!config.omniParser.enabled || !omniParserResponse)) {
         // Only use vision model if omni parser is not enabled
-        const systemPrompt = SYSTEM_PROMPT(source, !!omniParserResult);
+        const systemPrompt = omniParserResponse ? getOmniParserSystemPrompt(
+          source as string,
+          addOmniParserResults(omniParserResponse)
+        ) : SYSTEM_PROMPT(source, false, imageData);
         const result = await this.visionModel.generateContent([
           { text: systemPrompt },
           ...(imageData.image.length > 0
             ? [
-                {
-                  inlineData: {
-                    mimeType: "image/jpeg",
-                    data: Buffer.from(imageData.image, "base64").toString(
-                      "base64",
-                    ),
-                  },
-                },
-              ]
+              {
+                inlineData: {
+                  mimeType: "image/jpeg",
+                  data: Buffer.from(imageData.image, "base64").toString(
+                    "base64"
+                  )
+                }
+              }
+            ]
             : []),
-          { text: message },
+          ...(imageData.inference.length > 0
+            ? [
+              {
+                text: addElementsList(imageData.inference)
+              }
+            ]
+            : []),
+          { text: message }
         ]);
 
         const response = result.response;
         this.sendStreamResponse(res, {
           message: response.text(),
-          timestamp: Date.now(),
+          timestamp: Date.now()
         });
         this.sendStreamResponse(res, {
           message: "",
           isComplete: true,
-          timestamp: Date.now(),
+          timestamp: Date.now()
         });
       } else {
         // Handle chat model request
         const {
           systemPrompt,
           history: formattedHistory,
-          currentMessage,
+          currentMessage
         } = this.formatMessagesWithHistory(
           message,
           history,
           source,
-          omniParserResult,
+          omniParserResponse
         );
 
         const chat = this.chatModel.startChat({
-          history: formattedHistory,
+          history: formattedHistory
         });
 
         const result = await chat.sendMessageStream([
           { text: systemPrompt },
-          { text: currentMessage },
+          { text: currentMessage }
         ]);
         let accumulatedContent = "";
 
@@ -206,14 +217,14 @@ export class GeminiProvider implements LLMProvider {
             this.sendStreamResponse(res, {
               message: chunkText,
               timestamp: Date.now(),
-              isPartial: true,
+              isPartial: true
             });
           }
         }
         this.sendStreamResponse(res, {
           message: "Stream complete",
           timestamp: Date.now(),
-          isComplete: true,
+          isComplete: true
         });
       }
       return true;
@@ -222,7 +233,7 @@ export class GeminiProvider implements LLMProvider {
       this.sendStreamResponse(res, {
         message: "Error processing message",
         timestamp: Date.now(),
-        isError: false,
+        isError: false
       });
       return false;
     }

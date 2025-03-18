@@ -4,14 +4,15 @@ import { ChatCompletionMessageParam, ChatCompletionContentPart } from "openai/re
 import { config } from "../../config";
 import { ExploreActionTypes, Modes, StreamResponse } from "../../types";
 import { SYSTEM_PROMPT } from "../../prompts/systemPrompts.prompt";
-import { OmniParserResult } from "../../types/action.types";
 import { ChatMessage } from "../../types/chat.types";
 import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
-import { IClickableElement, IProcessedScreenshot } from "../interfaces/BrowserService";
+import { IClickableElement, IProcessedScreenshot, OmniParserResponse } from "../interfaces/BrowserService";
 import fs from "fs";
 import path from "path";
 import { convertElementsToInput } from "../../utils/prompt.util";
+import { getOmniParserSystemPrompt } from "../../prompts/omni-parser.prompt";
+import { addElementsList, addOmniParserResults } from "../../utils/common.util";
 
 export class OpenAIProvider implements LLMProvider {
   private client: OpenAI | AzureOpenAI;
@@ -61,9 +62,12 @@ export class OpenAIProvider implements LLMProvider {
     history: ChatMessage[],
     source?: StreamingSource,
     imageData?: IProcessedScreenshot,
-    omniParserResult?: OmniParserResult,
+    omniParserResult?: OmniParserResponse,
   ): ChatCompletionMessageParam[] {
-    const systemPrompt = SYSTEM_PROMPT(source, !!omniParserResult, imageData);
+    const systemPrompt = omniParserResult ? getOmniParserSystemPrompt(
+      source as string,
+      addOmniParserResults(omniParserResult)
+    ) : SYSTEM_PROMPT(source, false, imageData)
 
     const formattedMessages: ChatCompletionMessageParam[] = [
       {
@@ -115,7 +119,7 @@ export class OpenAIProvider implements LLMProvider {
       if (imageData.inference && imageData.inference.length > 0) {
         contentArray.push({
           type: "text",
-          text: this.addElementsList(imageData.inference),
+          text: addElementsList(imageData.inference),
         });
       }
       
@@ -133,9 +137,6 @@ export class OpenAIProvider implements LLMProvider {
     return formattedMessages;
   }
 
-  addElementsList(elements: IClickableElement[]) {
-    return `## Elements List:\n ${convertElementsToInput(elements)}`;
-  }
 
   async streamResponse(
     res: Response,
@@ -145,7 +146,7 @@ export class OpenAIProvider implements LLMProvider {
     _type: ExploreActionTypes = ExploreActionTypes.EXPLORE,
     source?: StreamingSource,
     imageData?: IProcessedScreenshot,
-    omniParserResult?: OmniParserResult,
+    omniParserResult?: OmniParserResponse,
     retryCount: number = config.retryAttemptCount,
   ): Promise<void> {
     const retryArray = new Array(retryCount).fill(0);
@@ -178,7 +179,7 @@ export class OpenAIProvider implements LLMProvider {
     history: ChatMessage[] = [],
     source?: StreamingSource,
     imageData?: IProcessedScreenshot,
-    omniParserResult?: OmniParserResult,
+    omniParserResult?: OmniParserResponse,
   ) {
     try {
       console.log("Processing message with history length:", history.length);

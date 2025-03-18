@@ -5,6 +5,8 @@ import { StreamingSource } from "../types/stream.types";
 import { PuppeteerActions } from "../services/implementations/puppeteer/PuppeteerActions";
 import { DockerCommands } from "../services/implementations/docker/DockerCommands";
 import { DockerActions } from "../services/implementations/docker/DockerActions";
+import { IClickableElement, OmniParserResponse } from "../services/interfaces/BrowserService";
+import { convertElementsToInput } from "./prompt.util";
 
 /**
  * Logs the provided message request to a JSON file in the logs directory.
@@ -30,40 +32,6 @@ export function logMessageRequest(messageRequest: any): void {
   }
 }
 
-/**
- * Updates the last message in the messages array with the Omni Parser results
- * if the role of the last message matches the provided user role.
- *
- * @param {any[]} messages - The array of message objects to be updated.
- * @param {OmniParserResult} omniParserResult - The result object from the Omni Parser, containing label coordinates and parsed content.
- * @param {string} userRole - The role of the user to check against the last message's role.
- * @return {void} No return value. The messages array is modified in place.
- */
-export function addOmniParserResults(
-  messages: any[],
-  omniParserResult: OmniParserResult,
-  userRole: string,
-): void {
-  const lastMessage = messages[messages.length - 1];
-  if (lastMessage.role === userRole) {
-    const content = Array.isArray(lastMessage.content)
-      ? lastMessage.content[0].text
-      : lastMessage.content;
-    const updatedContent = `${content}\n\nOmni Parser Results:\n${JSON.stringify(
-      {
-        label_coordinates: omniParserResult.label_coordinates,
-        parsed_content: omniParserResult.parsed_content,
-      },
-      null,
-      2,
-    )}`;
-    if (Array.isArray(lastMessage.content)) {
-      lastMessage.content[0].text = updatedContent;
-    } else {
-      lastMessage.content = updatedContent;
-    }
-  }
-}
 
 export async function getCurrentUrlBasedOnSource(source: StreamingSource) {
   let pageUrl = "";
@@ -90,3 +58,23 @@ export async function getCurrentUrlBasedOnSource(source: StreamingSource) {
   }
   return pageUrl;
 }
+
+export const addOmniParserResults = (omniParserResult: OmniParserResponse): string => {
+  const response = omniParserResult.elements
+    .map((element, index) => {
+      return `
+        <element>
+          <maker_number>${index}</marker_number>
+          <coordinates>${element.coordinates}</coordinates>
+          <content>${element.content}</content>
+          <is_intractable>${element.interactivity}</is_intractable>
+        </element>`;
+    })
+    .join("\n\n");
+  console.log(response);
+  return response;
+};
+
+export const addElementsList = (elements: IClickableElement[]) => {
+  return `## Elements List:\n ${convertElementsToInput(elements)}`;
+};
