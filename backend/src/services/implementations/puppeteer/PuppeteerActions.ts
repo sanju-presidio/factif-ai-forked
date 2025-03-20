@@ -63,9 +63,7 @@ export class PuppeteerActions {
         clickCount: 1,
       });
       // Create a navigation promise that resolves on load or times out after 5 seconds
-      await page.waitForLoadState("domcontentloaded", {
-        timeout: 20_000,
-      });
+      await this.waitTillHTMLStable(page);
 
       // Wait for both navigation and click to complete
 
@@ -127,7 +125,7 @@ export class PuppeteerActions {
       const currentUrl = page.url();
       PuppeteerActions.io?.sockets.emit("url-change", currentUrl);
       PuppeteerActions.io?.sockets.emit("action_performed");
-
+      await this.waitTillHTMLStable(page);
       return {
         status: "success",
         message: "Navigated back successfully",
@@ -159,6 +157,7 @@ export class PuppeteerActions {
         newKey = action.key.toLowerCase().replace("control", "ControlOrMeta");
       }
       await page.keyboard.press(newKey, { delay: 10 });
+      await this.waitTillHTMLStable(page);
       return {
         status: "success",
         message: "Keypress action performed successfully",

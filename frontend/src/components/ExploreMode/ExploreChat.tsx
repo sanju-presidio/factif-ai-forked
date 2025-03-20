@@ -294,13 +294,13 @@ export const ExploreModeSuggestions: Suggestion[] = [
     type: "explore",
     title: "Explore Wikipedia",
     description: "Explore all the features and links on wikipedia.org",
-    prompt: "Explore https://wikipedia.org and document the features and links",
+    prompt: "Launch https://wikipedia.org",
   },
   {
     type: "explore",
     title: "Explore Ecommerce Site",
     description: "Explore all the features and links on saucedemo.com",
     prompt:
-      "Explore https://www.saucedemo.com/ and document the features and links",
+      "Launch https://www.saucedemo.com",
   },
 ];

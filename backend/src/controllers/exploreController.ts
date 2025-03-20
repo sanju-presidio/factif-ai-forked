@@ -19,7 +19,7 @@ export class ExploreController {
       ChatService.createProvider(Modes.EXPLORE);
       console.log("Explore provider created with mode: EXPLORE");
       // Get data from request body
-      const { message, imageData, history, omniParserResult } = req.body;
+      const { message, history, omniParserResult } = req.body;
 
       // Get remaining params from query string
       const folderPath = req.query.folderPath as string;
@@ -42,12 +42,11 @@ export class ExploreController {
 
       // Get latest screenshot if available
       const latestScreenshot = await getLatestScreenshot(source);
-      const finalImageData = latestScreenshot || imageData;
 
       await Promise.all([
         folderPath &&
           saveScreenshots === "true" &&
-          saveScreenshot(finalImageData, folderPath, currentChatId),
+          saveScreenshot(latestScreenshot, folderPath, currentChatId),
         folderPath &&
           TestcaseController.downloadTestcase(
             history,
@@ -60,7 +59,7 @@ export class ExploreController {
           history,
           Modes.EXPLORE,
           type as ExploreActionTypes,
-          finalImageData,
+          latestScreenshot,
           source,
           omniParserResult,
         ),

@@ -3,17 +3,14 @@ import OpenAI, { AzureOpenAI } from "openai";
 import { ChatCompletionMessageParam, ChatCompletionContentPart } from "openai/resources";
 import { config } from "../../config";
 import { ExploreActionTypes, Modes, StreamResponse } from "../../types";
-import { OmniParserResult } from "../../types/action.types";
 import { ChatMessage } from "../../types/chat.types";
 import { StreamingSource } from "../../types/stream.types";
 import { LLMProvider } from "./LLMProvider";
 import {
-  convertInputToOutput,
   saveFileAndScreenshot,
 } from "../../utils/conversion-util";
 import {
   getCurrentUrlBasedOnSource,
-  logMessageRequest,
 } from "../../utils/common.util";
 import { getLatestScreenshot } from "../../utils/screenshotUtils";
 import { IProcessedScreenshot, OmniParserResponse } from "../interfaces/BrowserService";
@@ -107,7 +104,7 @@ export class ExploreModeOpenAIProvider implements LLMProvider {
     type: ExploreActionTypes = ExploreActionTypes.EXPLORE,
     currentPageUrl: string = ""
   ): ChatCompletionMessageParam[] {
-    const systemPrompt = this.chooseSystemPrompt(
+    const formattedMessages: ChatCompletionMessageParam[] = this.chooseSystemPrompt(
       type,
       source as StreamingSource,
       type === ExploreActionTypes.ACTION
@@ -115,8 +112,6 @@ export class ExploreModeOpenAIProvider implements LLMProvider {
         : "",
       currentPageUrl
     );
-
-    const formattedMessages: ChatCompletionMessageParam[] = systemPrompt;
 
     if (type === ExploreActionTypes.ACTION) {
       // Add all history messages
@@ -216,9 +211,9 @@ export class ExploreModeOpenAIProvider implements LLMProvider {
   ): Promise<boolean> {
     try {
       console.log("Processing message with history length:", history.length);
-      const currentPageUrl = await getCurrentUrlBasedOnSource(
-        source as StreamingSource
-      );
+      // const currentPageUrl = await getCurrentUrlBasedOnSource(
+      //   source as StreamingSource
+      // );
 
       // Format messages with history and image if present
       const messages = this.formatMessagesWithHistory(
@@ -228,7 +223,7 @@ export class ExploreModeOpenAIProvider implements LLMProvider {
         source,
         mode,
         type,
-        currentPageUrl
+        ""
       );
 
       // If omni parser is enabled and we have results, add them to the last user message
@@ -280,7 +275,7 @@ export class ExploreModeOpenAIProvider implements LLMProvider {
         message: "",
         isComplete: true,
         timestamp: Date.now(),
-        imageData,
+        imageData: imageData?.originalImage,
       });
       return true;
     } catch (error) {

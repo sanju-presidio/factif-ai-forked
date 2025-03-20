@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 import { ActionRequest } from "../types/action.types";
 import { actionExecutorService } from "../server";
 import { StreamingSource } from "../types/stream.types";
+import { getLatestScreenshot } from "../utils/screenshotUtils";
+import { config } from "../config";
+import omniParserService from "../services/OmniParserService";
 
 interface ActionQueryParams {
   chatId?: string;
@@ -31,8 +34,19 @@ class ActionController {
         ...req.body,
         source,
       });
+      const latestScreenshot = await getLatestScreenshot(source);
+      let omniParserResult = null;
+      if (config.omniParser.enabled) {
+        omniParserResult = await omniParserService.processImage(latestScreenshot.originalImage);
+      }
+      let response: any = {screenshot: latestScreenshot?.originalImage, omniParserResults: omniParserResult};
+      if (typeof result === "string") {
+        response = {...response, result}
+      } else {
+        response = {...response, ...result}
+      }
 
-      return res.json(result);
+      return res.json(response);
     } catch (error) {
       console.error("Action execution error:", error);
       return res.status(500).json({

@@ -8,7 +8,7 @@ import { ChatMessage, OmniParserResult } from "../types/chat.types";
 import { useAppContext } from "@/contexts/AppContext";
 import { useExploreModeContext } from "@/contexts/ExploreModeContext";
 import { MessageProcessor } from "../services/messageProcessor";
-import UIInteractionService from "../services/uiInteractionService";
+// import UIInteractionService from "../services/uiInteractionService";
 import ModeService from "../services/modeService";
 import {
   IExploredClickableElement,
@@ -25,15 +25,6 @@ import { pruneMessages } from "@/utils/storageUtil";
 import { v4 as uuid } from "uuid";
 import { createEdgeOrNode } from "@/utils/graph.util.ts";
 import { StreamingSource } from "@/types/api.types.ts";
-
-// Interface for screenshot data structure
-interface IProcessedScreenshot {
-  image: string;
-  inference?: any[];
-  totalScroll?: number;
-  scrollPosition?: number;
-  originalImage?: string;
-}
 
 export const useExploreChat = () => {
   const {
@@ -183,36 +174,36 @@ export const useExploreChat = () => {
   }, [setIsChatStreaming, streamingSource]);
 
   // Helper function to ensure a browser is available when needed
-  const ensureBrowserAvailable = async (url?: string) => {
-    // Skip if we already know we have a browser
-    if (browserLaunched.current) {
-      console.log("Browser already launched for explore mode, continuing");
-      return true;
-    }
-
-    try {
-      // Launch with specified URL or a blank page
-      const launchAction = {
-        type: "perform_action",
-        action: "launch",
-        url: url || "about:blank", // Use provided URL or blank page
-      };
-      
-      console.log("Ensuring browser is available for explore mode:", url || "about:blank");
-      setHasActiveAction?.(true);
-      await executeAction(launchAction, streamingSource);
-      setHasActiveAction?.(false);
-      
-      // Mark browser as launched
-      browserLaunched.current = true;
-      console.log("Browser successfully launched for explore mode");
-      return true;
-    } catch (error) {
-      console.error("Failed to ensure browser availability in explore mode:", error);
-      browserLaunched.current = false;
-      return false;
-    }
-  };
+  // const ensureBrowserAvailable = async (url?: string) => {
+  //   // Skip if we already know we have a browser
+  //   if (browserLaunched.current) {
+  //     console.log("Browser already launched for explore mode, continuing");
+  //     return true;
+  //   }
+  //
+  //   try {
+  //     // Launch with specified URL or a blank page
+  //     const launchAction = {
+  //       type: "perform_action",
+  //       action: "launch",
+  //       url: url || "about:blank", // Use provided URL or blank page
+  //     };
+  //
+  //     console.log("Ensuring browser is available for explore mode:", url || "about:blank");
+  //     setHasActiveAction?.(true);
+  //     await executeAction(launchAction, streamingSource);
+  //     setHasActiveAction?.(false);
+  //
+  //     // Mark browser as launched
+  //     browserLaunched.current = true;
+  //     console.log("Browser successfully launched for explore mode");
+  //     return true;
+  //   } catch (error) {
+  //     console.error("Failed to ensure browser availability in explore mode:", error);
+  //     browserLaunched.current = false;
+  //     return false;
+  //   }
+  // };
 
   // Scroll management
   const scrollToBottom = () => {
@@ -279,23 +270,9 @@ export const useExploreChat = () => {
 
   const createConstructNode = (
     currentNodeId: string,
-    data: { label: string; imageData?: string | IProcessedScreenshot },
+    data: { label: string; imageData?: string },
   ) => {
     const currentNodelCount = exploreGraphData.current.nodes.length;
-
-    // Process image data based on type
-    let processedImageData;
-    if (data.imageData) {
-      if (typeof data.imageData === "string") {
-        // If it's already a string, make sure it has the data URI prefix
-        processedImageData = data.imageData.startsWith("data:")
-          ? data.imageData
-          : `data:image/png;base64,${data.imageData}`;
-      } else if (typeof data.imageData === "object" && data.imageData.image) {
-        // If it's a screenshot object, extract the base64 image
-        processedImageData = `${data.imageData.image}`;
-      }
-    }
 
     exploreGraphData.current.nodes.push({
       id: currentNodeId,
@@ -303,7 +280,7 @@ export const useExploreChat = () => {
       data: {
         label: data.label,
         edges: [],
-        imageData: processedImageData,
+        imageData: data.imageData,
       },
       type: "pageNode",
     });
@@ -374,7 +351,7 @@ export const useExploreChat = () => {
 
   const handleEdgeAndNodeCreation = (
     url: string,
-    imageData?: string | IProcessedScreenshot,
+    imageData: string,
   ) => {
     if (!url) {
       console.error("Cannot create node: URL is empty");
@@ -444,20 +421,11 @@ export const useExploreChat = () => {
       exploreGraphData.current.nodes = exploreGraphData.current.nodes.map(
         (node) => {
           if (node.id === nodeId) {
-            let processedImageData;
-            if (typeof imageData === "string") {
-              processedImageData = imageData.startsWith("data:")
-                ? imageData
-                : `data:image/png;base64,${imageData}`;
-            } else if (typeof imageData === "object" && imageData.image) {
-              processedImageData = `data:image/png;base64,${imageData.image}`;
-            }
-
             return {
               ...node,
               data: {
                 ...node.data,
-                imageData: processedImageData,
+                imageData,
               },
             };
           }
@@ -488,17 +456,9 @@ export const useExploreChat = () => {
       id: string;
       nodeId: string;
     } | null,
-    imageData?: string | IProcessedScreenshot,
+    imageData: string,
   ) => {
     // Track if we have valid image data to save with the elements
-    let processedImageData: string | undefined;
-    if (imageData) {
-      if (typeof imageData === "string") {
-        processedImageData = imageData;
-      } else if (typeof imageData === "object" && imageData.image) {
-        processedImageData = imageData.image;
-      }
-    }
 
     for (const element of processedExploreMessage) {
       if (element.text && element.coordinates) {
@@ -512,7 +472,7 @@ export const useExploreChat = () => {
           id: elementId,
           nodeId,
           // Store the screenshot with each element in memory, but not in localStorage
-          screenshot: processedImageData,
+          screenshot: imageData,
           parent: {
             url: (parent?.url as string) || url,
             nodeId: (parent?.nodeId as string) || nodeId,
@@ -573,7 +533,7 @@ export const useExploreChat = () => {
     fullResponse: string,
     parent: { url: string; id: string; nodeId: string } | null = null,
     streamingSource: StreamingSource,
-    imageData?: string | IProcessedScreenshot,
+    imageData: string,
   ) => {
     const processedExploreMessage =
       MessageProcessor.processExploreMessage(fullResponse) || [];
@@ -674,7 +634,7 @@ export const useExploreChat = () => {
   const handleMessageCompletion = async (
     messageId: string,
     fullResponse: string,
-    imageData?: string | IProcessedScreenshot,
+    imageData: string,
     _omniParserResult?: OmniParserResult,
   ) => {
     if (activeMessageId.current !== messageId) return;
@@ -745,7 +705,7 @@ export const useExploreChat = () => {
   };
 
   const onGettingExploredMode = async (
-    imageData?: string | IProcessedScreenshot,
+    imageData?: string,
   ) => {
     const nextElementToVisit = getNextToExplore();
     console.log("nextElementToVisit ===>", nextElementToVisit);
@@ -756,12 +716,12 @@ export const useExploreChat = () => {
 
       // Use the element's saved screenshot if available, otherwise use the current page screenshot
       // This ensures we document the state of the page when the element was found
-      const elementScreenshot =
-        nextElementToVisit.screenshot ||
-        (typeof imageData === "string" ? imageData : imageData?.image);
+      const elementScreenshot = nextElementToVisit.screenshot ||imageData
+
 
       // Include a direct instruction to take a screenshot after navigation
-      const message = `In ${nextElementToVisit.url} \n Visit ${nextElementToVisit.text} on coordinate : ${nextElementToVisit.coordinates} with about this element : ${nextElementToVisit.aboutThisElement}. After clicking on this element you MUST take a screenshot by performing a click action. This screenshot is important for complete documentation of this feature.`;
+      const message = `In ${nextElementToVisit.url} \n Visit ${nextElementToVisit.text} on coordinate : ${nextElementToVisit.coordinates} with about this element : ${nextElementToVisit.aboutThisElement}. After clicking on this element you MUST take a screenshot by performing a click action. This screenshot is important for complete documentation of this feature.
+      Do any prior steps for the successful completion of this task.`;
 
       addMessage({
         text: message,
@@ -774,7 +734,7 @@ export const useExploreChat = () => {
       await handleExploreMessage(
         message,
         "action",
-        elementScreenshot || imageData,
+        elementScreenshot,
         undefined,
       );
     } else {
@@ -826,7 +786,7 @@ export const useExploreChat = () => {
   const handleExploreMessage = async (
     currentMessage: string,
     type: string,
-    imageData?: string | IProcessedScreenshot,
+    imageData?: string,
     omniParserResult?: OmniParserResult,
   ) => {
     if (isProcessing.current) return;
@@ -840,18 +800,10 @@ export const useExploreChat = () => {
 
     try {
       // Convert imageData to string if it's an IProcessedScreenshot object
-      let processedImageData: string | undefined;
-      if (imageData) {
-        if (typeof imageData === "string") {
-          processedImageData = imageData;
-        } else if (imageData.image) {
-          processedImageData = imageData.image;
-        }
-      }
 
       await sendExploreChatMessage(
         currentMessage,
-        processedImageData,
+        imageData,
         messagesRef.current.filter((msg) => !msg.isPartial),
         type,
         folderPath,
@@ -865,7 +817,7 @@ export const useExploreChat = () => {
           handleMessageCompletion(
             messageId,
             fullResponse,
-            image,
+            image || "",
             omniParserResult,
           ),
         (error: Error) => handleError(messageId, error),
@@ -895,56 +847,56 @@ export const useExploreChat = () => {
 
     if (sendToBackend) {
       // Check if message contains a URL and is an explore request
-      const containsUrl =
-        /(https?:\/\/[^\s'"]+)/i.test(message) ||
-        /\b[a-z0-9-]+\.(com|org|net|io|dev|edu|gov|co|app)\b/i.test(message);
-      const isExploreRequest =
-        message.toLowerCase().includes("explore") || type === "explore";
-
-      // If this seems to be an explore request with a URL, ensure browser is launched
-      if (isExploreRequest && containsUrl) {
-        try {
-          // Extract the URL from the message
-          let urlMatch = message.match(/(https?:\/\/[^\s'"]+)/i);
-
-          // If no http/https URL, try to detect domain names like example.com
-          if (!urlMatch) {
-            urlMatch = message.match(
-              /\b([a-z0-9-]+\.(com|org|net|io|dev|edu|gov|co|app)[^\s'"]*)\b/i,
-            );
-            if (urlMatch) {
-              // Prepend https:// to the domain
-              urlMatch[1] = `https://${urlMatch[1]}`;
-            }
-          }
-          
-          if (urlMatch && urlMatch[1]) {
-            console.log("Auto-launching browser for explore request with URL:", urlMatch[1]);
-            
-            // Use our ensureBrowserAvailable helper to launch with the specific URL
-            const launched = await ensureBrowserAvailable(urlMatch[1]);
-            
-            if (launched) {
-              // Update URL in UI since browser was launched successfully
-              UIInteractionService.getInstance().handleSourceChange(
-                streamingSource, 
-                urlMatch[1]
-              );
-              
-              // Mark browser as launched so we don't try again
-              browserLaunched.current = true;
-              
-              // Wait briefly to ensure the browser is ready
-              await new Promise((resolve) => setTimeout(resolve, 1000));
-            }
-          } else {
-            // No URL found, but we should still ensure a browser is available for explore mode
-            await ensureBrowserAvailable();
-          }
-        } catch (error) {
-          console.error("Error in auto-launch logic:", error);
-        }
-      }
+      // const containsUrl =
+      //   /(https?:\/\/[^\s'"]+)/i.test(message) ||
+      //   /\b[a-z0-9-]+\.(com|org|net|io|dev|edu|gov|co|app)\b/i.test(message);
+      // const isExploreRequest =
+      //   message.toLowerCase().includes("explore") || type === "explore";
+      //
+      // // If this seems to be an explore request with a URL, ensure browser is launched
+      // if (isExploreRequest && containsUrl) {
+      //   try {
+      //     // Extract the URL from the message
+      //     let urlMatch = message.match(/(https?:\/\/[^\s'"]+)/i);
+      //
+      //     // If no http/https URL, try to detect domain names like example.com
+      //     if (!urlMatch) {
+      //       urlMatch = message.match(
+      //         /\b([a-z0-9-]+\.(com|org|net|io|dev|edu|gov|co|app)[^\s'"]*)\b/i,
+      //       );
+      //       if (urlMatch) {
+      //         // Prepend https:// to the domain
+      //         urlMatch[1] = `https://${urlMatch[1]}`;
+      //       }
+      //     }
+      //
+      //     if (urlMatch && urlMatch[1]) {
+      //       console.log("Auto-launching browser for explore request with URL:", urlMatch[1]);
+      //
+      //       // Use our ensureBrowserAvailable helper to launch with the specific URL
+      //       const launched = await ensureBrowserAvailable(urlMatch[1]);
+      //
+      //       if (launched) {
+      //         // Update URL in UI since browser was launched successfully
+      //         UIInteractionService.getInstance().handleSourceChange(
+      //           streamingSource,
+      //           urlMatch[1]
+      //         );
+      //
+      //         // Mark browser as launched so we don't try again
+      //         browserLaunched.current = true;
+      //
+      //         // Wait briefly to ensure the browser is ready
+      //         await new Promise((resolve) => setTimeout(resolve, 1000));
+      //       }
+      //     } else {
+      //       // No URL found, but we should still ensure a browser is available for explore mode
+      //       await ensureBrowserAvailable();
+      //     }
+      //   } catch (error) {
+      //     console.error("Error in auto-launch logic:", error);
+      //   }
+      // }
 
       await handleExploreMessage(message, type, imageData, undefined);
       setLatestOmniParserResult(null);

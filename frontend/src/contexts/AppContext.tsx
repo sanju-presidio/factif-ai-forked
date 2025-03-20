@@ -49,7 +49,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const [stopCurrentStreaming, setStopCurrentStreaming] = useState(false);
   const [isExplorerCollapsed, setIsExplorerCollapsed] = useState(true);
   const [mode, setMode] = useState<string>("explore");
-  const [type, setType] = useState<string>("explore");
+  const [type, setType] = useState<string>("action");
 
   // Initialize with proper backend mode
   useEffect(() => {
@@ -65,6 +65,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     
     initializeMode();
   }, []); // Only run once on component mount
+
 
   const switchMode = async (newMode: "explore" | "regression") => {
     if (isChatStreaming) {

@@ -153,4 +153,4 @@ export const getPerformActionPrompt = (
 ) =>
   `${performActionPrompt}\n Environment Context: ${source}\n
   Task: ${task} \n
-  Current Page URL: ${pageUrl}`;
+  `;
