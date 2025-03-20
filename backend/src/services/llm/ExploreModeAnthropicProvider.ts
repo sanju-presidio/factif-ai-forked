@@ -12,7 +12,6 @@ import {
 } from "../../prompts/explore-mode.prompt";
 import { appDocumentationGeneratorPrompt } from "../../prompts/app-doc-generator.prompt";
 import {
-  convertInputToOutput,
   saveFileAndScreenshot,
 } from "../../utils/conversion-util";
 import {
@@ -107,7 +106,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     }
 
     // Add current message with image if present
-    if (imageData) {
+    if (imageData && imageData.originalImage && imageData.originalImage !== "") {
       formattedMessages.push({
         role: "user",
         content: [
@@ -173,7 +172,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
       message: "",
       timestamp: Date.now(),
       isComplete: true,
-      imageData,
+      imageData: imageData?.originalImage.startsWith('data:image')? imageData?.originalImage : `data:image/png;base64,${imageData?.originalImage}`,
     });
   }
 
@@ -256,12 +255,12 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     imageData?: IProcessedScreenshot,
     omniParserResult?: OmniParserResponse,
   ): Promise<boolean> {
-    const USER_ROLE = "user";
     try {
+      console.log(omniParserResult);
       const modelId = this.getModelId();
-      const currentPageUrl = await getCurrentUrlBasedOnSource(
-        source as StreamingSource
-      );
+      // const currentPageUrl = await getCurrentUrlBasedOnSource(
+      //   source as StreamingSource
+      // );
 
       // Format messages with history and image if present
       const formattedMessage = this.formatMessagesWithHistory(
@@ -271,7 +270,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
         source,
         mode,
         type,
-        currentPageUrl
+        ""
       );
 
       const messageRequest = this.buildMessageRequest(
