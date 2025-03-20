@@ -39,7 +39,7 @@ class ActionExecutorService {
       // Validate source-specific actions
       if (request.source === "ubuntu-docker-vnc") {
         // Allow "launch" but still block "back" action
-        if (request.action === "back") {
+        if (request.action === "launch" || request.action === "back") {
           return {
             status: "error",
             message: `Action '${request.action}' is not supported for Docker VNC source`,
@@ -52,20 +52,6 @@ class ActionExecutorService {
           await this.initializeDockerVNC();
         }
 
-        // Handle launch action for Docker VNC
-        if (request.action === "launch") {
-          if (!request.url) {
-            return {
-              status: "error",
-              message: "URL is required for launch action",
-              screenshot: "",
-            };
-          }
-          // Use launchFirefoxWithUrl via performAction
-          return await service.performAction(request, {
-            url: request.url,
-          });
-        }
       } else if (request.source === "chrome-puppeteer") {
         if (request.action === "doubleClick") {
           return {
