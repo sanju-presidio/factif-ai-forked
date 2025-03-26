@@ -67,7 +67,7 @@ Common Actions (Both Sources):
 ## complete_task: 
 - Use this tool when the given task is completed. 
 - Do not use this tool with any other tool.
-Usage: <complete_task>description</complete_task>
+Usage: <complete_task><task_status>exploration complete</task_status><additional_info>any information/description you want to provide</additional_info></complete_task>
 
 Important Notes:
 - Puppeteer: Must start with 'launch' if no screenshot exists

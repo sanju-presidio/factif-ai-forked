@@ -12,7 +12,7 @@ export class MessagePatterns {
     followupQuestion:
       /<(?:ask_followup_question|follow_up_question)>[\s\n]*<question>[\s\n]*(.*?)[\s\n]*<\/question>(?:[\s\n]*<additional_info>(.*?)<\/additional_info>)?[\s\n]*<\/(?:ask_followup_question|follow_up_question)>/s,
     completeTask:
-      /<complete_task>[\s\n]*<result>([\s\S]*?)<\/result>(?:[\s\n]*<command>(.*?)<\/command>)?[\s\n]*<\/complete_task>/s,
+      /<complete_task>[\s\n]*<task_status>([\s\S]*?)<\/task_status>[\s\n]*<additional_info>([\s\S]*?)<\/additional_info>[\s\n]*<\/complete_task>/s,
     performAction:
       /<perform_action>[\s\S]*?<action>(.*?)<\/action>(?:[\s\S]*?<url>(.*?)<\/url>)?(?:[\s\S]*?<coordinate>(.*?)<\/coordinate>)?(?:[\s\S]*?<text>(.*?)<\/text>)?(?:[\s\S]*?<key>(.*?)<\/key>)?(?:[\s\S]*?<about_this_action>(.*?)<\/about_this_action>)?(?:[\s\S]*?<marker_number>(.*?)<\/marker_number>)?[\s\S]*?<\/perform_action>/s,
     actionResult:
@@ -182,20 +182,22 @@ export class MessagePatterns {
   private static processCompleteTaskMatch(
     fullMatch: string,
   ): IProcessedMessagePart | null {
-    const result = fullMatch.match(this.patterns.completeTask)?.[1];
-    const command = fullMatch.match(this.patterns.completeTask)?.[2];
-    let match = null;
-    if (result) {
-      match = {
-        length: fullMatch.length,
-        part: {
-          type: "complete_task",
-          result,
-          ...(command && { command }),
-        } as CompleteTask,
-      };
-    }
-    return match;
+    const matchObj = fullMatch.match(this.patterns.completeTask);
+    if (!matchObj || !matchObj[1] || !matchObj[2]) return null;
+    
+    const taskStatus = matchObj[1];
+    const additionalInfo = matchObj[2];
+    
+    // Add checkmark emoji for successful tasks
+    const formattedResult = `${taskStatus === "success" ? "✅ " : ""}${additionalInfo}`;
+    
+    return {
+      length: fullMatch.length,
+      part: {
+        type: "complete_task",
+        result: formattedResult,
+      } as CompleteTask,
+    };
   }
 
   private static processFollowupQuestion(
