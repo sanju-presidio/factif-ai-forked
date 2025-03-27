@@ -15,7 +15,7 @@ interface MessageProps {
 }
 
 const MessagePartRenderer = ({ part }: { part: MessagePart }) => {
-  switch (part.type) {
+  switch (part?.type) {
     case "text":
       return (
         <ReactMarkdown components={markdownComponents}>
@@ -42,13 +42,17 @@ const MessagePartRenderer = ({ part }: { part: MessagePart }) => {
 
     case "complete_task":
       return (
-        <div className="mb-2 text-success pt-3 rounded">
-          <p className="font-medium mb-1">Task Complete</p>
-          <ReactMarkdown components={markdownComponents}>
-            {part.result}
-          </ReactMarkdown>
+        <div className="mb-2 p-3 bg-success/10 rounded-lg rounded-bl-none">
+          <div className="flex items-center gap-2 mb-2 text-success font-medium">
+            <span>Task Complete</span>
+          </div>
+          <div className="text-foreground">
+            <ReactMarkdown components={markdownComponents}>
+              {part.result}
+            </ReactMarkdown>
+          </div>
           {part.command && (
-            <div className="mt-2 bg-content1 p-2 rounded">
+            <div className="mt-2 bg-content1/50 p-2 rounded">
               <code className="text-sm font-mono text-success">
                 {part.command}
               </code>
@@ -240,10 +244,13 @@ const MessagePartRenderer = ({ part }: { part: MessagePart }) => {
           </div>
         </div>
       );
+    default:
+      console.warn("Unknown message part type");
+      return null;
   }
 };
 
-export const Message = ({ text, isUser, isPartial }: MessageProps) => {
+export const Message = ({ text, isUser, isPartial }: MessageProps) => {  
   // User messages get a bubble style
   if (isUser) {
     return (
@@ -263,7 +270,8 @@ export const Message = ({ text, isUser, isPartial }: MessageProps) => {
       <div
         className={`max-w-[90%] text-white text-left ${isPartial ? "animate-pulse" : ""}`}
       >
-        {parts.map((part, index) => (
+        {/* Safely render message parts with null checks */}
+        {Array.isArray(parts) && parts.map((part, index) => (
           <MessagePartRenderer key={index} part={part} />
         ))}
       </div>
