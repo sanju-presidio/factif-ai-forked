@@ -38,11 +38,14 @@ export const config: Config = {
     },
     anthropic: {
       apiKey: process.env.ANTHROPIC_API_KEY,
-      model: "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+      model:
+        process.env.BEDROCK_MODEL_ID ||
+        "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
       contextConfig: {
         minMessages: 10,
         contextReservePercentage: 20,
         modelContextWindows: {
+          [process.env.BEDROCK_MODEL_CONTEXT_WINDOW || "default"]: 200000,
           "us.anthropic.claude-3-7-sonnet-20250219-v1:0": 131072,
         },
       },
