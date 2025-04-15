@@ -344,6 +344,7 @@ export const useChat = () => {
     if (!isChatStreaming) {
       try {
         setHasActiveAction(true);
+        setCost(0)
         // Reset LLM context in the backend to ensure a fresh start
         await ModeService.resetContext("regression");
         console.log("Context reset for new chat");

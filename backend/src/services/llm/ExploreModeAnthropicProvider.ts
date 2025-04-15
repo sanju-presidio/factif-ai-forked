@@ -22,6 +22,7 @@ import {
 import { getLatestScreenshot } from "../../utils/screenshotUtils";
 import { IProcessedScreenshot, OmniParserResponse } from "../interfaces/BrowserService";
 import { PuppeteerService } from "../implementations/puppeteer/PuppeteerService";
+import { CostTracker } from "../../utils/costCalculator";
 
 // Interface for page metadata
 interface PageMetadata {
@@ -164,10 +165,22 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
     source?: StreamingSource
   ): Promise<void> {
     let completeResponse = '';
-    
+    let model = ''
     // Collect the complete response while streaming chunks
     for await (const chunk of stream) {
-      if (chunk.type === "content_block_delta" && chunk.delta?.text) {
+      if (chunk.type === "message_start") {
+        model = chunk.message.model
+      } else if (chunk.type === "message_stop") {
+        const {
+          inputTokenCount,
+          outputTokenCount
+        } = chunk["amazon-bedrock-invocationMetrics"];
+        CostTracker.recordCost(currentChatId, model,
+          {
+            prompt_tokens: inputTokenCount,
+            completion_tokens: outputTokenCount
+          });
+      } else if (chunk.type === "content_block_delta" && chunk.delta?.text) {
         // Accumulate the complete response
         completeResponse += chunk.delta.text;
         
@@ -188,6 +201,7 @@ export class ExploreModeAnthropicProvider implements LLMProvider {
       message: "",
       timestamp: Date.now(),
       isComplete: true,
+      totalCost: CostTracker.getTotalCostForTestcase(currentChatId),
       imageData: imageData?.originalImage.startsWith('data:image')? imageData?.originalImage : `data:image/png;base64,${imageData?.originalImage}`,
     });
   }

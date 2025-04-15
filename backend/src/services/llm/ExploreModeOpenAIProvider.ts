@@ -23,6 +23,7 @@ import {
 import { appDocumentationGeneratorPrompt } from "../../prompts/app-doc-generator.prompt";
 import fs from "fs";
 import path from "path";
+import { CostTracker } from "../../utils/costCalculator";
 
 // Interface for page metadata (matching the Anthropic implementation)
 interface PageMetadata {
@@ -260,12 +261,21 @@ export class ExploreModeOpenAIProvider implements LLMProvider {
         model: this.model,
         messages,
         stream: true,
+        stream_options: {
+          "include_usage": true
+        }
       });
 
       let accumulatedResponse = "";
 
       for await (const chunk of stream) {
         const content = chunk.choices[0]?.delta?.content || "";
+        if (chunk.usage) {
+          CostTracker.recordCost(currentChatId, chunk.model, {
+            prompt_tokens: chunk.usage?.prompt_tokens as number,
+            completion_tokens: chunk.usage?.completion_tokens as number,
+          })
+        }
         if (content) {
           accumulatedResponse += content;
           this.sendStreamResponse(res, {
@@ -285,6 +295,7 @@ export class ExploreModeOpenAIProvider implements LLMProvider {
         message: "",
         isComplete: true,
         timestamp: Date.now(),
+        totalCost: CostTracker.getTotalCostForTestcase(currentChatId),
         imageData: imageData?.originalImage,
       });
       return true;

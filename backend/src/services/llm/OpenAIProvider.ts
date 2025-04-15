@@ -210,7 +210,6 @@ export class OpenAIProvider implements LLMProvider {
 
       for await (const chunk of stream) {
         const content = chunk.choices[0]?.delta?.content || "";
-        console.log(JSON.stringify(chunk));
         if (chunk.usage) {
           CostTracker.recordCost(currentChatId, chunk.model, {
             prompt_tokens: chunk.usage?.prompt_tokens as number,
