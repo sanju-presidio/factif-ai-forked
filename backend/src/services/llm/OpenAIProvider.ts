@@ -229,6 +229,7 @@ export class OpenAIProvider implements LLMProvider {
       this.sendStreamResponse(res, {
         message: "",
         isComplete: true,
+        totalCost: CostTracker.getTotalCostForTestcase(currentChatId),
         timestamp: Date.now(),
       });
       return true;
