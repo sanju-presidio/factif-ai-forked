@@ -12,7 +12,7 @@ import {
   ModalBody,
   ModalContent,
   ModalFooter,
-  ModalHeader,
+  ModalHeader
 } from "@nextui-org/react";
 import { Suggestion, Suggestions } from "../Chat/components/Suggestions";
 import RecentChats from "./RecentChats";
@@ -20,7 +20,7 @@ import { emergencyStorageCleanup } from "@/utils/storageCleanup";
 
 export const ExploreChat = () => {
   const navigate = useNavigate();
-  const { currentChatId, setCurrentChatId, isChatStreaming, type, setHasActiveAction } =
+  const { currentChatId, setCurrentChatId, isChatStreaming, type, setHasActiveAction, setCost } =
     useAppContext();
   const { showRecentChats, setShowRecentChats } = useExploreModeContext();
   const { messages, sendMessage, clearChat, messagesEndRef, stopStreaming } =
@@ -38,6 +38,7 @@ export const ExploreChat = () => {
         try {
           setHasActiveAction(true);
           await ModeService.resetContext("explore");
+          setCost(0);
           console.log("Context reset on ExploreChat component mount");
           initialLoadRef.current = false;
         } catch (error) {
@@ -47,7 +48,7 @@ export const ExploreChat = () => {
         }
       }
     };
-    
+
     initializeExploreChat();
   }, [setHasActiveAction]);
 
@@ -90,6 +91,7 @@ export const ExploreChat = () => {
 
   const handleClearChat = () => {
     clearChat();
+    setCost(0);
     setCurrentChatId(`#${Date.now()}`);
   };
 
@@ -294,13 +296,13 @@ export const ExploreModeSuggestions: Suggestion[] = [
     type: "explore",
     title: "Explore Wikipedia",
     description: "Explore all the features and links on wikipedia.org",
-    prompt: "Launch https://wikipedia.org",
+    prompt: "Launch https://wikipedia.org"
   },
   {
     type: "explore",
     title: "Explore Ecommerce Site",
     description: "Explore all the features and links on saucedemo.com",
     prompt:
-      "Launch https://www.saucedemo.com",
-  },
+      "Launch https://www.saucedemo.com"
+  }
 ];
