@@ -75,7 +75,7 @@ export const sendChatMessage = async (
 
   let reader: ReadableStreamDefaultReader<Uint8Array>;
   const decoder = new TextDecoder();
-  let connectionTimeout = 0;
+  let connectionTimeout: any = 0;
 
   try {
     reader = response.body.getReader();

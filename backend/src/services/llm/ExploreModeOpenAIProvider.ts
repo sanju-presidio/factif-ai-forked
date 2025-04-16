@@ -173,7 +173,7 @@ export class ExploreModeOpenAIProvider implements LLMProvider {
   ): Promise<void> {
     console.log("is image available", !!imageData);
     type === ExploreActionTypes.EXPLORE &&
-      (await this.generateComponentDescription(source as StreamingSource));
+      (await this.generateComponentDescription(source as StreamingSource, currentChatId));
 
     const retryArray = new Array(retryCount).fill(0);
     let isRetrySuccessful = false;
@@ -340,7 +340,8 @@ export class ExploreModeOpenAIProvider implements LLMProvider {
   }
 
   async generateComponentDescription(
-    source: StreamingSource
+    source: StreamingSource,
+    currentChatId: string,
   ): Promise<boolean> {
     let pageUrl = await getCurrentUrlBasedOnSource(source);
     let screenshot = await getLatestScreenshot(source);
@@ -420,6 +421,12 @@ IMPORTANT:
         model: this.model,
         messages: messages,
       });
+
+      CostTracker.recordCost(currentChatId, response.model,
+        {
+          prompt_tokens: response!.usage!.prompt_tokens,
+          completion_tokens: response!.usage!.completion_tokens
+        });
 
       const responseText = response.choices[0].message.content || "";
       
