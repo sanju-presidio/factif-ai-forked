@@ -153,7 +153,8 @@ export class AnthropicProvider implements LLMProvider {
     this.sendStreamResponse(res, {
       message: "",
       timestamp: Date.now(),
-      isComplete: true
+      isComplete: true,
+      totalCost: CostTracker.getTotalCostForTestcase(currentChatId),
     });
   }
 
