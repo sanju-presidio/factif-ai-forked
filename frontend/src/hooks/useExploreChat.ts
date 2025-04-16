@@ -157,7 +157,7 @@ export const useExploreChat = () => {
       hasPartialMessage.current = false;
       activeMessageId.current = null;
       setIsChatStreaming(false);
-
+      setCost(0)
       // Then ensure browser is closed on component unmount
       try {
         // We need to use an immediately invoked async function since useEffect cleanup can't be async

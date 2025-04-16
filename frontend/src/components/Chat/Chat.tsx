@@ -10,7 +10,7 @@ import ModeService from "../../services/modeService";
 
 export const Chat = () => {
   const navigate = useNavigate();
-  const { currentChatId, setCurrentChatId, isChatStreaming, setHasActiveAction } = useAppContext();
+  const { currentChatId, setCurrentChatId, isChatStreaming, setHasActiveAction, setCost } = useAppContext();
   const { messages, sendMessage, clearChat, messagesEndRef, stopStreaming } =
     useChat();
   const initialLoadRef = useRef(true);
@@ -22,6 +22,7 @@ export const Chat = () => {
         try {
           setHasActiveAction(true);
           await ModeService.resetContext("regression");
+          setCost(0)
           console.log("Context reset on Chat component mount");
           initialLoadRef.current = false;
         } catch (error) {
