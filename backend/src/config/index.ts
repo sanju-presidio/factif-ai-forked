@@ -19,7 +19,7 @@ export const config: Config = {
       | "gemini",
     openai: {
       apiKey: process.env.OPENAI_API_KEY,
-      model: process.env.OPENAI_MODEL || "gpt-4o",
+      model: process.env.OPENAI_MODEL || "gpt-4.1",
       contextConfig: {
         minMessages: 10,
         contextReservePercentage: 20,
@@ -32,7 +32,7 @@ export const config: Config = {
       azure: {
         endpoint: process.env.AZURE_OPENAI_ENDPOINT,
         apiKey: process.env.AZURE_OPENAI_API_KEY,
-        model: process.env.AZURE_OPENAI_MODEL || "gpt-4o",
+        model: process.env.AZURE_OPENAI_MODEL || "gpt-4.1",
         version: process.env.AZURE_OPENAI_VERSION || "2024-08-01-preview",
       },
     },
