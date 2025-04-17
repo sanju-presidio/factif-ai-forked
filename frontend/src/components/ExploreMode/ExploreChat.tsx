@@ -12,7 +12,7 @@ import {
   ModalBody,
   ModalContent,
   ModalFooter,
-  ModalHeader
+  ModalHeader,
 } from "@nextui-org/react";
 import { Suggestion, Suggestions } from "../Chat/components/Suggestions";
 import RecentChats from "./RecentChats";
@@ -20,8 +20,15 @@ import { emergencyStorageCleanup } from "@/utils/storageCleanup";
 
 export const ExploreChat = () => {
   const navigate = useNavigate();
-  const { currentChatId, setCurrentChatId, isChatStreaming, type, setHasActiveAction, setCost } =
-    useAppContext();
+  const {
+    currentChatId,
+    setCurrentChatId,
+    isChatStreaming,
+    type,
+    setHasActiveAction,
+    setCost,
+    cost,
+  } = useAppContext();
   const { showRecentChats, setShowRecentChats } = useExploreModeContext();
   const { messages, sendMessage, clearChat, messagesEndRef, stopStreaming } =
     useExploreChat();
@@ -42,7 +49,10 @@ export const ExploreChat = () => {
           console.log("Context reset on ExploreChat component mount");
           initialLoadRef.current = false;
         } catch (error) {
-          console.error("Failed to reset explore context on component mount:", error);
+          console.error(
+            "Failed to reset explore context on component mount:",
+            error,
+          );
         } finally {
           setHasActiveAction(false);
         }
@@ -280,7 +290,16 @@ export const ExploreChat = () => {
           </div>
         </div>
       </div>
-      <div className="border-t border-content3 px-6">
+      {cost > 0 && (
+        <div
+          className={
+            "flex items-center justify-start text-orange-500 text-left px-4 py-1 border-t-1 border-content3 bg-[#242121]"
+          }
+        >
+          Cost: ${cost.toFixed(4)}
+        </div>
+      )}
+      <div className="border-t border-content3 px-4">
         <ChatInput
           onSendMessage={handleSendMessage}
           isStreaming={isChatStreaming}
@@ -296,13 +315,12 @@ export const ExploreModeSuggestions: Suggestion[] = [
     type: "explore",
     title: "Explore Wikipedia",
     description: "Explore all the features and links on wikipedia.org",
-    prompt: "Launch https://wikipedia.org"
+    prompt: "Launch https://wikipedia.org",
   },
   {
     type: "explore",
     title: "Explore Ecommerce Site",
     description: "Explore all the features and links on saucedemo.com",
-    prompt:
-      "Launch https://www.saucedemo.com"
-  }
+    prompt: "Launch https://www.saucedemo.com",
+  },
 ];

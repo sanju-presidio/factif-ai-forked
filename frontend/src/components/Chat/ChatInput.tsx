@@ -5,8 +5,12 @@ import { StopIcon } from "../Icons/StopIcon";
 import { Textarea, Button } from "@nextui-org/react";
 import { useAppContext } from "../../contexts/AppContext";
 
-export const ChatInput = ({ onSendMessage, isStreaming, onStopStreaming }: ChatInputProps) => {
-  const { hasActiveAction, cost } = useAppContext();
+export const ChatInput = ({
+  onSendMessage,
+  isStreaming,
+  onStopStreaming,
+}: ChatInputProps) => {
+  const { hasActiveAction } = useAppContext();
   const [message, setMessage] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -31,22 +35,24 @@ export const ChatInput = ({ onSendMessage, isStreaming, onStopStreaming }: ChatI
 
   return (
     <>
-
       <div className="py-4">
-        {cost > 0 && <div className={"text-orange-500 text-left"}>Cost: ${cost.toFixed(4)}</div>}
-        <div className="flex gap-2 items-center pt-2">
+        <div className="flex gap-2 items-center">
           <Textarea
             ref={inputRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={(e) => handleKeyPress(e as KeyboardEvent<HTMLTextAreaElement>)}
-            placeholder={isStreaming ? "Waiting for response..." : "Type a message..."}
+            onKeyDown={(e) =>
+              handleKeyPress(e as KeyboardEvent<HTMLTextAreaElement>)
+            }
+            placeholder={
+              isStreaming ? "Waiting for response..." : "Type a message..."
+            }
             classNames={{
               base: "min-h-12",
               input: [
                 "text-foreground",
                 "placeholder:text-foreground-500",
-                "!text-base"
+                "!text-base",
               ],
               inputWrapper: [
                 "min-h-12",
@@ -56,8 +62,8 @@ export const ChatInput = ({ onSendMessage, isStreaming, onStopStreaming }: ChatI
                 "!cursor-text",
                 "transition-colors",
                 "!border-content3",
-                isStreaming ? "opacity-50" : ""
-              ]
+                isStreaming ? "opacity-50" : "",
+              ],
             }}
             variant="bordered"
             radius="lg"
@@ -68,7 +74,10 @@ export const ChatInput = ({ onSendMessage, isStreaming, onStopStreaming }: ChatI
           />
           <Button
             onPress={isStreaming ? onStopStreaming : handleSendMessage}
-            isDisabled={(!isStreaming && !message.trim()) || (isStreaming && hasActiveAction)}
+            isDisabled={
+              (!isStreaming && !message.trim()) ||
+              (isStreaming && hasActiveAction)
+            }
             className={`h-12 w-12 min-w-[48px] ${
               isStreaming
                 ? "bg-danger/20 hover:bg-danger/30 text-danger border border-danger/50"
@@ -78,7 +87,13 @@ export const ChatInput = ({ onSendMessage, isStreaming, onStopStreaming }: ChatI
             variant={isStreaming ? "flat" : "solid"}
             isIconOnly
             radius="lg"
-            title={isStreaming ? (hasActiveAction ? "Cannot stop during action execution" : "Stop generating") : "Send message"}
+            title={
+              isStreaming
+                ? hasActiveAction
+                  ? "Cannot stop during action execution"
+                  : "Stop generating"
+                : "Send message"
+            }
             size="lg"
           >
             {isStreaming ? <StopIcon /> : <SendIcon />}
