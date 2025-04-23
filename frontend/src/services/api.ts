@@ -75,7 +75,8 @@ export const sendChatMessage = async (
 
   let reader: ReadableStreamDefaultReader<Uint8Array>;
   const decoder = new TextDecoder();
-  let connectionTimeout: any = 0;
+  let connectionTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
+
 
   try {
     reader = response.body.getReader();
@@ -99,7 +100,9 @@ export const sendChatMessage = async (
           }
 
           hasReceivedMessage = true;
-          clearTimeout(connectionTimeout);
+          if (connectionTimeout) {
+            clearTimeout(connectionTimeout);
+          }
 
           // Use decodeWithStream option to handle potential partial UTF-8 characters
           const chunk = decoder.decode(value, {stream: true});
@@ -129,7 +132,9 @@ export const sendChatMessage = async (
           }
         }
       } catch (error) {
-        clearTimeout(connectionTimeout);
+        if (connectionTimeout) {
+          clearTimeout(connectionTimeout);
+        }
         console.error("Stream processing error:", error);
         onError(error instanceof Error ? error : new Error(String(error)));
       }
@@ -137,7 +142,9 @@ export const sendChatMessage = async (
 
     processStream();
   } catch (error) {
-    clearTimeout(connectionTimeout);
+    if (connectionTimeout) {
+      clearTimeout(connectionTimeout);
+    }
     throw error instanceof Error ? error : new Error(String(error));
   }
 
@@ -249,7 +256,8 @@ export const sendExploreChatMessage = async (
 
   let reader: ReadableStreamDefaultReader<Uint8Array>;
   const decoder = new TextDecoder();
-  let connectionTimeout = 0;
+  let connectionTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
+
 
   try {
     reader = response.body.getReader();
@@ -274,7 +282,9 @@ export const sendExploreChatMessage = async (
           }
 
           hasReceivedMessage = true;
-          clearTimeout(connectionTimeout);
+          if (connectionTimeout) {
+            clearTimeout(connectionTimeout);
+          }
 
           // Use decodeWithStream option to handle potential partial UTF-8 characters
           const chunk = decoder.decode(value, {stream: true});
@@ -303,7 +313,9 @@ export const sendExploreChatMessage = async (
           }
         }
       } catch (error) {
-        clearTimeout(connectionTimeout);
+        if (connectionTimeout) {
+          clearTimeout(connectionTimeout);
+        }
         console.error("Stream processing error:", error);
         onError(error instanceof Error ? error : new Error(String(error)));
       }
@@ -311,7 +323,9 @@ export const sendExploreChatMessage = async (
 
     processStream();
   } catch (error) {
-    clearTimeout(connectionTimeout);
+    if (connectionTimeout) {
+      clearTimeout(connectionTimeout);
+    }
     throw error instanceof Error ? error : new Error(String(error));
   }
 
