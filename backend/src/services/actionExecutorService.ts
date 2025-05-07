@@ -111,8 +111,6 @@ class ActionExecutorService {
     if (!text) {
       return "";
     }
-    console.log('==========', text, '=====', config);
-    console.log('===', config.hasOwnProperty(text), config[text]);
     return config.hasOwnProperty(text) ? config[text] : text;
   }
 
