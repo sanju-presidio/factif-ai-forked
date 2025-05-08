@@ -50,7 +50,7 @@ export const Header = () => {
                 clipRule="evenodd" 
               />
             </svg>
-            Secret Manager
+            Secrets Manager
           </Link>
           <img src={darkLogo} alt="HAI Build Logo" className="h-6 w-auto" />
         </div>
