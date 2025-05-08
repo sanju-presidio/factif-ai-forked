@@ -18,7 +18,7 @@ export const SecretManager = () => {
     try {
       const savedSecrets = localStorage.getItem("APP_SECRET");
       if (savedSecrets) {
-        const parsedSecrets = JSON.parse(savedSecrets);
+        const parsedSecrets = JSON.parse(atob(savedSecrets));
         if (Array.isArray(parsedSecrets) && parsedSecrets.length > 0) {
           setSecretPairs(parsedSecrets);
         }
