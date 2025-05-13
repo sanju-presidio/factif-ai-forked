@@ -130,7 +130,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 const loadSecretIfAny = () => {
   let secrets: Record<string, string> = {}
   try {
-    const items = localStorage.getItem("APP_SECRETS");
+    const items = localStorage.getItem("APP_SECRET");
     if (items) {
       secrets = JSON.parse(atob(items)) as Record<string, string>;
     }
